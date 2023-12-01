@@ -1,6 +1,13 @@
+import time
+start=time.perf_counter()
+
 import numpy as np
 import spherical
 import quaternionic
+
+print("imports ",time.perf_counter()-start)
+restart=time.perf_counter()
+
 
 t=0.1
 radius=4
@@ -10,7 +17,7 @@ phi=0
 M=1
 a=.9
 
-zs=[0,0,0,0,0]
+zs=[1,1,1,1,1]
 
 sqrtof2=np.sqrt(2)
 sqrtof3=np.sqrt(3)
@@ -32,15 +39,16 @@ Deltapp= 2
 
 Sigma= 1/rho/rhobar
 
-# Kinnersley Tetrad in Kerr-Newman Coordinates
-# lKN=np.array([0,1,0,0])
-# nKN=np.array([(radius*radius+a*a),-Delta/1,0,a])*rho*rhobar
-# mKN=-rhobar/sqrtof2*np.array([1.j*a*SinTH,0,0,0.j/SinTH])
-# mbKN=-rho/sqrtof2*np.array([-1.j*a*SinTH,0,0,-1.j/SinTH])
-# lKNd=np.transpose(lKNlowerred)
-# nKNd=np.transpose(nKNlowerred)
-# mKNd=np.transpose(mKNlowerred)
-# mbKNd=np.transpose(mbKNlowerred)
+# Kinnersley Tetrad in Outgoing? Kerr-Newman Coordinates
+lKN=np.array([0,1,0,0])
+nKN=np.array([(radius*radius+a*a),-Delta/1,0,a])*rho*rhobar# decide if Delta is divided by 2 or not
+mKN=-rhobar/sqrtof2*np.array([1.j*a*SinTH,0,1,1.j/SinTH])
+mbKN=np.conj(mKN)#-rho/sqrtof2*np.array([-1.j*a*SinTH,0,1,-1.j/SinTH])
+
+lKNd=np.transpose(np.array([1, 0, 0, -a* SinTH*SinTH]))
+nKNd=np.transpose(np.array([(Delta*rho*rhobar)/1, 1, 0, -(1/1)*Delta*rho*rhobar * a*SinTH*SinTH]))
+mKNd=np.transpose(np.array([1.j*rhobar* a*SinTH/sqrtof2, 0, -1/(sqrtof2*rho), -1.j*rhobar*(radius*radius + a*a)*SinTH/sqrtof2]))
+mbKNd=np.conj(mKNd)#np.transpose(np.array([ -1.j*rho* a*SinTH/sqrtof2, 0, -1/(sqrtof2*rhobar), 1.j*rho*(radius*radius + a*a)*SinTH/sqrtof2]))
 
 # Non-zero Spin Coefficients (in terms of rho)
 tau= -rho*rhobar*(1.j*a*SinTH)/sqrtof2
@@ -58,6 +66,9 @@ gammabar= gamma-mu+mubar
 alpha= pi-betabar
 alphabar= pibar-beta
 
+print("starting vals ",time.perf_counter()-start,time.perf_counter()-restart)
+restart=time.perf_counter()
+
 # Relavent sYlm's
 ell=2
 ell_max=ell
@@ -72,13 +83,32 @@ def swsh_array(l, theta, phi):
     W = spherical.Wigner(l, l)
     D_mat = W.D(rotor)
     return sign_mat*np.sqrt((2*l+1.)/(4.*np.pi)) * D_mat
-sY2m=swsh_array(2, theta, phi).reshape((2*ell+1,2*ell+1))
-Yn22m=sY2m[:,0]
-Yn12m=sY2m[:,1]
-Y02m=sY2m[:,2]
-Y12m=sY2m[:,3]
-Y22m=sY2m[:,4]
 
+print("Ylms func ",time.perf_counter()-start,time.perf_counter()-restart)
+Ylmtimer=time.perf_counter()
+
+sY2m=swsh_array(2, theta, phi).reshape((2*ell+1,2*ell+1))
+print("Ylms 1st: ",time.perf_counter()-start,time.perf_counter()-Ylmtimer)
+Ylmtimer=time.perf_counter()
+
+DummY2m_2=swsh_array(2, 1.2*theta, phi).reshape((2*ell+1,2*ell+1))
+print("Ylms 2nd: ",time.perf_counter()-start,time.perf_counter()-Ylmtimer)
+Ylmtimer=time.perf_counter()
+
+DummY2m_3=swsh_array(2, 1.3*theta, phi).reshape((2*ell+1,2*ell+1))
+print("Ylms 3rd: ",time.perf_counter()-start,time.perf_counter()-Ylmtimer)
+Ylmtimer=time.perf_counter()
+
+Yn22m=zs*sY2m[:,0]
+Yn12m=zs*sY2m[:,1]
+Y02m=zs*sY2m[:,2]
+Y12m=zs*sY2m[:,3]
+Y22m=zs*sY2m[:,4]
+
+print("Ylm Arrayed ",time.perf_counter()-start,time.perf_counter()-Ylmtimer)
+
+print("Ylms ",time.perf_counter()-start,time.perf_counter()-restart)
+restart=time.perf_counter()
 
 # #   of tetrad vectors
 # Dell=
@@ -245,6 +275,9 @@ Ethphmbmb=np.conj(Ethhmm)
 # PDhnmb_m= 
 # PDhmbmb_m= 
 
+print("Sums completed ",time.perf_counter()-start,time.perf_counter()-restart)
+restart=time.perf_counter()
+
 
 dChr=np.zeros((4,4,4),np.complex128) # complex numbers are being cast as real
 # Some terms have explicit q-dependence
@@ -307,7 +340,12 @@ dChr[3,3,1]=dChr[3,1,3]
 dChr[3,3,2]=dChr[3,2,3]
 dChr[3,3,3]=np.conj(dChr[2,2,2]) # ( 0.5 * Ethhmbmb + hnmb * ( rhobar - rho ) )
 
+print("dChr calculated ",time.perf_counter()-start,time.perf_counter()-restart)
 print(dChr[0,0:3,:])
+restart=time.perf_counter()
+
+
+
 # Delll=
 # Dellmml=
 # Delmm=
