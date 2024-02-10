@@ -34,13 +34,16 @@ class Integrator:
     
     def rungeKutta(self, x0, f, dz, N=None, I=[0,None], eventbool=False, eventexp=None, terminalevent=0, optvar=None, Nmax=None):# butcher='rk4',):
         """
-        Integration steps continue to be taken until either N steps are taken, the end of the interval I=[begin, end] is reached, or a terminal event occurs, whichever comes first. If N==null (default), then integration will continue until the end of the interval, I=[begin,end], is reached. If I=[begin] (is a one-element array, rather than two), then N steps will be taken (Default is I=[0]). If neither N nor I[1] are given, then a value for Nmax is required, even if a terminal event is set. 
+        Returns a list called 'result' containing integration steps [x0,x1,...x(end-1)]
+        Integration steps continue to be taken until either N steps are taken, the end of the interval I=[begin, end] is reached, or a terminal event occurs, whichever comes first. 
+        If N==None (default), then integration will continue until the end of the interval, I=[begin,end], is reached. If I=[begin] (is a one-element array, rather than two), then N steps will be taken (Default is I=[0]). 
+        If neither N nor I[1] are given, then a value for Nmax is required, even if a terminal event is set. 
             x0:     numerical value or list of values. Initial value of the integration.
             f:      f(z,x). function that caulates and returns dx/dz.
             dz:       float. value is given to h (integration step size). If both N and I[1] are given, then h is calulated and dz is ignored.
             N:        int. If N=1 is given, the value of the next step is returned, else a list of sequential values is returned.  
             eventbool:   boolean (false). If true, then the function eventexp will be called at the end of each integration step. 
-            eventexp:    (x,result[i],optvar). a function that takes two arrays, current step and previous step, and returns a value. It can also be used to act on x.
+            eventexp:   (x,result[i],optvar). a function that takes two arrays, current step and previous step, and returns a value. It can also be used to act on x.
                         An event is detected if the value=0. 
             optvar: This is an optional argument the user can use to control the output of eventexp. 
                         "threesteps" - if the string 'threesteps' is given for optvar, then the third argument will be result[i-1] (two steps from current step). Note that for the first integration step, this evaluates to ( x1, x0, undefined ). 
@@ -124,17 +127,19 @@ class Integrator:
                 for e in range(dim):
                     y[e] += butcher['b'][l] * k[l][e]
             for e in range(dim):
-                x[e] = x[e] + h * y[e]
+                x[e] = x[e] + h * y[e] 
+                # This x is appended to result at the beginning of the next iteration. 
+                # If this is the last interation, this x will not be included.
             t += h
             if eventbool:
                 if optvar == 'threesteps':
-                    opt = result[r-1]
+                    opt = result[r-1] #result[-1] returns undefined, which is the default vaule for optvar
                 if optvar == 'duration':
                     opt = t - t0
                 if eventexp(x, result[r], opt) == 0:
                     eventcount += 1
                 if terminalevent > 0 and eventcount == terminalevent:
-                    break
+                    break #the purpose of detecting the event may be to avoid including it in the result, so terminate here.
             r += 1
             if eventterminationonly:
                 tend = t + h
