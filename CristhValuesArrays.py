@@ -1,5 +1,6 @@
 import time
 
+
 import numpy as np
 import spherical
 import quaternionic
@@ -454,7 +455,9 @@ def TotalGamma(a,radius,theta,phi,z_array=np.array([0,0,0,0,0])):
 
 
 a=.9
-zs=.0001*np.array([2+1.1j,-4.222,1.03+5.3j,-.1-3.2j,-1.54]) # strong perturbations will cause accelerations too great for scipy's solver to integrate
+eps=.0001
+zs=eps*np.array([2+1.1j,-3.222,1.03+2.331j,-.1-3.2j,-1.54]) # eps X z_array with Norm ~ O(1)
+# strong perturbations will cause accelerations too great for scipy's solver to integrate
 
 # imtolfactor=10**6 # imaginary parts less than imtolfactor*machineprecision will be suppressed.
 # #As far as I have currently found, the largest variances of dChr[a,b,c] from dChr[a,c,b], or any Im[] from zero, or q=0 from q!=0 are ~e-11.
@@ -488,9 +491,14 @@ zs=.0001*np.array([2+1.1j,-4.222,1.03+5.3j,-.1-3.2j,-1.54]) # strong perturbatio
 # print(np.real_if_close(dChrKN[0,3,0],100),np.real_if_close(dChrKN[0,3,1],100),np.real_if_close(dChrKN[0,3,2],100),np.real_if_close(dChrKN[0,3,3],100))
 # dChrKN = np.real_if_close(dChrKN,1)
 # print("dChrKN calculated ",time.perf_counter()-start,time.perf_counter()-restart)
-En,Lz,Q=0.9256423226610695, 1.4916991631572436, 6.762720051991568
-p,e,x=5.6,0,.5
+
+p,e,x=5.6,0,1
 r1,r2=p/(1+e),p/(1-e)
+
+#Equatorial and Circular
+En=((-2 + p)* np.sqrt(p) + a/x)/np.sqrt(2* a/x *p**(3/2) + (-3 + p)* p*p)
+Lz=(a*a - 2 *a/x *np.sqrt(p) + p*p)/np.sqrt(2 *a/x + (-3 + p)* np.sqrt(p))/p**(3/4)
+Q=0
 
 Phisq = Lz *Lz / (1 - En *En)
 q = Q / (1 - En *En) # is mu^2 1 or -1?
@@ -523,32 +531,89 @@ td0,rd0,thd0,phd0=(a * (Lz - a * En * (1 - usq)) + (r0 *r0 + a *a) * ((r0 *r0 + 
 #print(time.perf_counter()-start)
 
 ICs=[t0,r0,th0,ph0,td0,rd0,thd0,phd0]
-rtol, atol = (1e-8, 1e-8)
-tau_end,Nsteps=1000,5
 
-start=time.perf_counter()
-base_sol=ODE(base_RHS,[0,tau_end],ICs,rtol=rtol,atol=atol)
-t_array_len= base_sol.t.size
-print("tau_end=",base_sol.t[-1],"base_sol runtime=",time.perf_counter()-start,"sol.t length=",base_sol.t.shape)
-print("base size=",base_sol.y.shape,base_sol.nfev)
+tau_end,Nsteps=100,5
 
-del_r = 0. # tracker of max variance from r0 for when e=0
-if e==0:
-    for r in base_sol.y[1]:
-        if abs(del_r)<abs(r-r0): del_r=r-r0
-print("Del_r=",del_r)
 
-restart=time.perf_counter()
+import matplotlib.pyplot as plt
 
-pert_sol=ODE(pert_RHS,[0,tau_end],ICs,args=zs,rtol=rtol,atol=atol)#,t_eval=base_sol.t) Doing this makes it take significantly longer
-pt_array_len= pert_sol.t.size
-print("tau_end=",pert_sol.t[-1],"pert_sol runtime=",time.perf_counter()-restart,"sol.t length=",pert_sol.t.shape)
-print("pert size=",pert_sol.y.shape)
-print(pert_sol.nfev)
-if pert_sol.t[-1]<tau_end: print("Integration ended early because the acceleration exceeded the solver's capacity. This probably means the perturbation destabilized the orbit.")
 
-from math import floor
-print("base_sol.phi: {}".format([base_sol.y[3][floor(n)] for n in range(0,t_array_len,floor(t_array_len/Nsteps) )]))
-print("pert_sol.phi: {}".format([pert_sol.y[3][floor(n)] for n in range(0,pt_array_len,floor(pt_array_len/Nsteps) )]))
-print("base_sol.r: {}".format([base_sol.y[1][floor(n)] for n in range(0,t_array_len,floor(t_array_len/Nsteps) )]))
-print("pert_sol.r: {}".format([pert_sol.y[1][floor(n)] for n in range(0,pt_array_len,floor(pt_array_len/Nsteps) )]))
+#make plots testing errors and divergences for correlation with integrator tolerance level
+exps=range(7,14) #exponents for the integration tolerances
+t_div=np.zeros(7) # time what integration of perturbed orbit ended noting when the integration ends early do to divergence
+y_div=np.zeros((8,7)) # pert_sol.y at t_div fpr each tolerance level
+del_r_max=np.zeros(7) # tracker of max variance of base orbit from r0 for when e=0, contains the max vals of del_r for each exp of tolerance
+t_delr_max=np.zeros(7) # the times for del_r_max
+del_theta_max=np.zeros(7) # tracker of max variance of base orbit from th0 for when x=+/-1, contains the max vals of del_theta for each exp of tolerance
+t_delth_max=np.zeros(7) # the times for del_theta_max
+del_r_arrays=[]
+del_theta_arrays=[]
+base_t_arrays=[]
+base_r_arrays=[]
+base_theta_arrays=[]
+base_phi_arrays=[]
+pert_t_arrays=[]
+pert_r_arrays=[]
+pert_theta_arrays=[]
+pert_phi_arrays=[]
+for i in range(exps.size):
+    rtol, atol = 10**(-exps[i]), 10**(-exps[i])
+    # start=time.perf_counter()
+    base_sol=ODE(base_RHS,[0,tau_end],ICs,rtol=rtol,atol=atol)
+    base_t_arrays.append(base_sol.t)
+    base_r_arrays.append(base_sol.y[1])
+    base_theta_arrays.append(base_sol.y[2])
+    # base_phi_arrays.append(base_sol.y[3])
+    # t_array_len= base_sol.t.size
+    # print("tau_end=",base_sol.t[-1],"base_sol runtime=",time.perf_counter()-start,"sol.t length=",base_sol.t.shape)
+    # print("base size=",base_sol.y.shape,base_sol.nfev)
+    if e==0:
+        del_r=[0.]
+        for j in range(1,base_sol.t.size):
+            r=base_sol.y[1][j]
+
+            if abs(del_r[-1])<abs(r-r0): 
+                del_r_max[i]=r-r0
+                t_delr_max[i]=base_sol.t[j]
+            
+            del_r.append(r-r0)
+        del_r_arrays.append(del_r)
+    if x*x==1:
+        del_theta=[0.]
+        for j in range(1,base_sol.t.size):
+            theta=base_sol.y[2][j]
+            
+            if abs(del_theta[-1])<abs(theta-th0): 
+                del_theta_max[i]=theta-th0
+                t_delth_max[i]=base_sol.t[j]
+            
+            del_theta.append(theta-th0)
+        del_theta_arrays.append(del_theta)
+    # print("Del_r=",del_r)
+
+    # restart=time.perf_counter()
+
+    pert_sol=ODE(pert_RHS,[0,tau_end],ICs,args=zs,rtol=rtol,atol=atol)#,t_eval=base_sol.t) Doing this makes it take significantly longer
+    pert_t_arrays.append(pert_sol.t)
+    pert_r_arrays.append(pert_sol.y[1])
+    pert_theta_arrays.append(pert_sol.y[2])
+    pert_phi_arrays.append(pert_sol.y[3])
+    # pt_array_len= pert_sol.t.size
+    if pert_sol.t[-1]<tau_end:
+        t_div[i]=pert_sol.t[-1]
+        y_div[i]=pert_sol.y[:][-1]
+    else:
+        t_div[i]=np.nan
+        y_div[i]=np.nan
+    
+# print("tau_end=",pert_sol.t[-1],"pert_sol runtime=",time.perf_counter()-restart,"sol.t length=",pert_sol.t.shape)
+# print("pert size=",pert_sol.y.shape)
+# print(pert_sol.nfev)
+# if pert_sol.t[-1]<tau_end: print("Integration ended early because the acceleration exceeded the solver's capacity. This probably means the perturbation destabilized the orbit.")
+
+
+# from math import floor
+# print("base_sol.phi: {}".format([base_sol.y[3][floor(n)] for n in range(0,t_array_len,floor(t_array_len/Nsteps) )]))
+# print("pert_sol.phi: {}".format([pert_sol.y[3][floor(n)] for n in range(0,pt_array_len,floor(pt_array_len/Nsteps) )]))
+# print("base_sol.r: {}".format([base_sol.y[1][floor(n)] for n in range(0,t_array_len,floor(t_array_len/Nsteps) )]))
+# print("pert_sol.r: {}".format([pert_sol.y[1][floor(n)] for n in range(0,pt_array_len,floor(pt_array_len/Nsteps) )]))
