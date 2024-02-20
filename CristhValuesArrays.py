@@ -455,8 +455,10 @@ def TotalGamma(a,radius,theta,phi,z_array=np.array([0,0,0,0,0])):
 
 
 a=.9
-eps=.001
-zs=eps*np.array([2+1.1j,-3.222,1.03+2.331j,-.1-3.2j,-1.54]) # eps X z_array with Norm ~ O(1)
+eps_ar=[10**(-5),10**(-6),10**(-9),10**(-12)]
+# 1e-5 diverges around t=6500 for r=12.8
+eps=eps_ar[3]
+zs = eps*np.array([2+1.1j,-3.222,1.03+2.331j,-.1-3.2j,-1.54]) # eps X z_array with Norm ~ O(1)
 # strong perturbations will cause accelerations too great for scipy's solver to integrate
 
 # imtolfactor=10**6 # imaginary parts less than imtolfactor*machineprecision will be suppressed.
@@ -492,20 +494,60 @@ zs=eps*np.array([2+1.1j,-3.222,1.03+2.331j,-.1-3.2j,-1.54]) # eps X z_array with
 # dChrKN = np.real_if_close(dChrKN,1)
 # print("dChrKN calculated ",time.perf_counter()-start,time.perf_counter()-restart)
 
-p,e,x=5.6,0,1
+p,e,x=5.7,0,.5
 r1,r2=p/(1+e),p/(1-e)
-
+zm = np.sqrt(1 - x*x)
 #Equatorial and Circular
-En=((-2 + p)* np.sqrt(p) + a/x)/np.sqrt(2* a/x *p**(3/2) + (-3 + p)* p*p)
-Lz=(a*a - 2 *a/x *np.sqrt(p) + p*p)/np.sqrt(2 *a/x + (-3 + p)* np.sqrt(p))/p**(3/4)
-Q=0
+if e==0 and x*x==1:
+    En=((-2 + p)* np.sqrt(p) + a/x)/np.sqrt(2* a/x *p**(3/2) + (-3 + p)* p*p)
+    Lz=(a*a - 2 *a/x *np.sqrt(p) + p*p)/np.sqrt(2 *a/x + (-3 + p)* np.sqrt(p))/p**(3/4)
+    Q=0
+elif e==0: 
+    En=np.sqrt(
+        (
+         (-3 + p)* (-2 + p)*(-2 + p) *p**5 - 2 *a**5 *x *(-1 + x*x)*
+                np.sqrt(p*p*p + a*a *p *(-1 + x*x))
+         + a*a*a*a *p*p *(-1 + x*x) *
+                (4 - 5* p* (-1 + x*x) + 3* p*p *(-1 + x*x))
+         - a**6 *(-1 + x*x)*(-1 + x*x) *
+                (x*x + p*p *(-1 + x*x) - p *(1 + 2 *x*x))
+         + a*a *p*p*p *
+                (4 - 4 *x*x + p *(12 - 7 *x*x) - 3 *p*p*p *(-1 + x*x) + p*p *(-13 + 10 *x*x))
+         + a*
+                (-2* p**(9/2) *x *
+                  np.sqrt(p*p + a*a *(-1 + x*x))
+                 + 4* p*p*p *x *
+                  np.sqrt(p*p*p + a*a *p *(-1 + x*x))
+                )
+         + 2 *a*a*a *
+                (2 *p *x *(-1 + x*x) *
+                  np.sqrt(p*p*p + a*a *p *(-1 + x*x))
+                 - x*x*x *
+                  np.sqrt(p**7 + a*a *p**5 * (-1 + x*x))
+                )
+        )/(
+            (p*p - a*a *(-1 + x*x)) *
+                ((-3 + p)*(-3 + p) *p*p*p*p - 2 *a*a *p*p *
+                   (3 + 2 *p - 3 *x*x + p*p *(-1 + x*x))
+                 + a*a*a*a *(-1 + x*x) *
+                   (-1 + x*x + p*p *(-1 + x*x) - 2 *p *(1 + x*x))
+                )
+          )
+    )
+    
+    g = 2 *a *p
+    d = (a*a + (-2 + p) *p) *(p*p - a*a *(-1 + x*x))
+    h = ((-2 + p) *p - a*a *(-1 + x*x))/(x*x)
+    f = p*p*p*p + a*a *(p *(2 + p) - (a*a + (-2 + p) *p) *(-1 + x*x))
+    Lz= (-En *g + x *np.sqrt((-d *h + En*En *(g*g + f *h))/(x*x)))/h
+    Q = zm*zm *(a*a * (1 - En*En) + Lz*Lz/(1 - zm*zm))
 
 Phisq = Lz *Lz / (1 - En *En)
 q = Q / (1 - En *En) # is mu^2 1 or -1?
 U0sq = 1-x*x # zm^2
 asqU1sq = ((a *a + q + Phisq) + np.sqrt((a *a + q + Phisq) ** 2 - 4 * a *a * q)) / (2) #* a**2); #u0 and u1 just need to be swapped. now u1^2>1
 
-t0,r0,th0,ph0=0,r1,np.arccos(np.sqrt(1-x*x)),0
+t0,r0,th0,ph0=0,r1,np.arccos(zm),0
 
 usq=np.cos(th0)*np.cos(th0)
 Delta=r0 * r0 - 2 * r0 + a * a
@@ -532,113 +574,141 @@ td0,rd0,thd0,phd0=(a * (Lz - a * En * (1 - usq)) + (r0 *r0 + a *a) * ((r0 *r0 + 
 
 ICs=[t0,r0,th0,ph0,td0,rd0,thd0,phd0]
 
-tau_end,Nsteps=100,5
+tau_end,Nsteps=10000,5
 
 
 import matplotlib.pyplot as plt
 
 #make plots testing errors and divergences for correlation with integrator tolerance level
 exps=np.arange(7.,13.) #exponents for the integration tolerances
-t_div=np.zeros(6) # time what integration of perturbed orbit ended noting when the integration ends early do to divergence
-y_div=np.zeros((6,8)) # pert_sol.y at t_div fpr each tolerance level
-del_r_max=np.zeros(6) # tracker of max variance of base orbit from r0 for when e=0, contains the max vals of del_r for each exp of tolerance
-t_delr_max=np.zeros(6) # the times for del_r_max
-del_theta_max=np.zeros(6) # tracker of max variance of base orbit from th0 for when x=+/-1, contains the max vals of del_theta for each exp of tolerance
-t_delth_max=np.zeros(6) # the times for del_theta_max
+t_div=np.zeros(exps.size) # time what integration of perturbed orbit ended noting when the integration ends early do to divergence
+y_div=np.zeros((exps.size,8)) # pert_sol.y at t_div fpr each tolerance level
+# del_r_max=np.zeros(6) # tracker of max variance of base orbit from r0 for when e=0, contains the max vals of del_r for each exp of tolerance
+# t_delr_max=np.zeros(6) # the times for del_r_max
+# del_theta_max=np.zeros(6) # tracker of max variance of base orbit from th0 for when x=+/-1, contains the max vals of del_theta for each exp of tolerance
+# t_delth_max=np.zeros(6) # the times for del_theta_max
 del_r_arrays=[]
 del_theta_arrays=[]
 base_t_arrays=[]
-# base_r_arrays=[]
-# base_theta_arrays=[]
-# base_phi_arrays=[]
+base_r_arrays=[]
+base_theta_arrays=[]
+base_phi_arrays=[]
 pert_t_arrays=[]
 pert_r_arrays=[]
 pert_theta_arrays=[]
 pert_phi_arrays=[]
 # pert_ys=[]
+times=np.linspace(0,tau_end,tau_end)
 for i in range(exps.size):
     rtol, atol = 10.**(-exps[i]), 10.**(-exps[i])
     # start=time.perf_counter()
-    base_sol=ODE(base_RHS,[0,tau_end],ICs,rtol=rtol,atol=atol)
-    base_t_arrays.append(base_sol.t)
+    # base_sol=ODE(base_RHS,[0,tau_end],ICs,t_eval=times,rtol=rtol,atol=atol)
+    # # base_t_arrays.append(base_sol.t)
     # base_r_arrays.append(base_sol.y[1])
     # base_theta_arrays.append(base_sol.y[2])
     # base_phi_arrays.append(base_sol.y[3])
-    # t_array_len= base_sol.t.size
-    # print("tau_end=",base_sol.t[-1],"base_sol runtime=",time.perf_counter()-start,"sol.t length=",base_sol.t.shape)
-    # print("base size=",base_sol.y.shape,base_sol.nfev)
-    if e==0:
-        del_r=[0.]
-        for j in range(1,base_sol.t.size):
-            r=base_sol.y[1][j]
+    # # t_array_len= base_sol.t.size
+    # # print("tau_end=",base_sol.t[-1],"base_sol runtime=",time.perf_counter()-start,"sol.t length=",base_sol.t.shape)
+    # # print("base size=",base_sol.y.shape,base_sol.nfev)
+    # if e==0:
+    #     del_r=[0.]
+    #     for j in range(1,base_sol.t.size):
+    #         r=base_sol.y[1][j]
 
-            if abs(del_r[-1])<abs(r-r0): 
-                del_r_max[i]=r-r0
-                t_delr_max[i]=base_sol.t[j]
+    #         # if abs(del_r[-1])<abs(r-r0): 
+    #         #     del_r_max[i]=r-r0
+    #         #     t_delr_max[i]=base_sol.t[j]
             
-            del_r.append(r-r0)
-        del_r_arrays.append(del_r)
+    #         del_r.append(r-r0)
+    #     del_r_arrays.append(del_r)
 
-    if x*x==1:
-        del_theta=[0.]
-        for j in range(1,base_sol.t.size):
-            theta=base_sol.y[2][j]
+    # if x*x==1:
+    #     del_theta=[0.]
+    #     for j in range(1,base_sol.t.size):
+    #         theta=base_sol.y[2][j]
             
-            if abs(del_theta[-1])<abs(theta-th0): 
-                del_theta_max[i]=theta-th0
-                t_delth_max[i]=base_sol.t[j]
+    #         # if abs(del_theta[-1])<abs(theta-th0): 
+    #         #     del_theta_max[i]=theta-th0
+    #         #     t_delth_max[i]=base_sol.t[j]
             
-            del_theta.append(theta-th0)
-        del_theta_arrays.append(del_theta)
-    # print("Del_r=",del_r)
+    #         del_theta.append(theta-th0)
+    #     del_theta_arrays.append(del_theta)
+    # # print("Del_r=",del_r)
 
     # restart=time.perf_counter()
 
-    pert_sol=ODE(pert_RHS,[0,tau_end],ICs,args=zs,rtol=rtol,atol=atol)#,t_eval=base_sol.t) Doing this makes it take significantly longer
+    pert_sol=ODE(pert_RHS,[0,tau_end],ICs,t_eval=times,args=zs,rtol=rtol,atol=atol)#) Doing this makes it take significantly longer
     pert_t_arrays.append(pert_sol.t)
     pert_r_arrays.append(pert_sol.y[1])
     pert_theta_arrays.append(pert_sol.y[2])
     pert_phi_arrays.append(pert_sol.y[3])
+    
     # pert_ys.append(pert_sol.y)
     # pt_array_len= pert_sol.t.size
-    if pert_sol.t[-1]<tau_end:
-        t_div[i]=pert_sol.t[-1]
-        y_div[i]=[val[-1] for val in pert_sol.y]
-    else:
-        t_div[i]=np.nan
-        y_div[i]=np.nan
+    # if pert_sol.t[-1]<tau_end:
+    #     t_div[i]=pert_sol.t[-1]
+    #     y_div[i]=[val[-1] for val in pert_sol.y]
+    # else:
+    #     t_div[i]=np.nan
+    #     y_div[i]=np.nan
 
-#fig_del_r for exp in exps: 6 plots of del_r_arrays[i] vs base_t_arrays[i]
+    # if e==0:
+    #     del_r=[0.]
+    #     for j in range(1,pert_sol.t.size):
+    #         r=pert_sol.y[1][j]
 
-#fig_del_th for exp in exps: 6 plots of del_theta_arrays[i] vs base_t_arrays[i]
-fig_del, (ax_del_r,ax_del_th)=plt.subplots(1,2)
-for e in range(6):
-    ax_del_r.plot(base_t_arrays[e],del_r_arrays[e],label="1e-%d" % exps[e])
-    ax_del_th.plot(base_t_arrays[e],del_theta_arrays[e],label="1e-%d" % exps[e])
-ax_del_r.set_xlabel('proper time')
-ax_del_r.set_ylabel('$\delta$r')
-ax_del_th.set_xlabel('proper time')
-ax_del_th.set_ylabel('$\delta\\theta$')
-ax_del_r.legend()
-ax_del_th.legend()
-plt.show()
+    #         if abs(del_r[-1])<abs(r-r0): 
+    #             del_r_max[i]=r-r0
+    #             t_delr_max[i]=base_sol.t[j]
+            
+    #         del_r.append(r-r0)
+    #     del_r_arrays.append(del_r)
 
-#fig_max_dels 2 scatter plots: del_r_max and t_delr_max vs tol and del_theta_max and t_delth_max vs tol
-fig_max_dels, (ax_dr_max,ax_dth_max)=plt.subplots(1,2)
+    # if x*x==1:
+    #     del_theta=[0.]
+    #     for j in range(1,base_sol.t.size):
+    #         theta=base_sol.y[2][j]
+            
+    #         if abs(del_theta[-1])<abs(theta-th0): 
+    #             del_theta_max[i]=theta-th0
+    #             t_delth_max[i]=base_sol.t[j]
+            
+    #         del_theta.append(theta-th0)
+    #     del_theta_arrays.append(del_theta)
+
+# #fig_del_r for exp in exps: 6 plots of del_r_arrays[i] vs base_t_arrays[i]
+
+# #fig_del_th for exp in exps: 6 plots of del_theta_arrays[i] vs base_t_arrays[i]
+# fig_del, (ax_del_r,ax_del_th)=plt.subplots(1,2)
+# for exp in range(exps.size):
+#     ax_del_r.plot(times,del_r_arrays[exp],label="1e-%d" % exps[exp])
+#     if x*x==1: ax_del_th.plot(times,del_theta_arrays[exp],label="1e-%d" % exps[exp])
+# ax_del_r.set_xlabel('proper time')
+# ax_del_r.set_ylabel('$\delta$r')
+# ax_del_th.set_xlabel('proper time')
+# ax_del_th.set_ylabel('$\delta\\theta$')
+# ax_del_r.legend()
+# ax_del_th.legend()
+# fig_del.suptitle("Unperturbed Deviations")
+# plt.show()
+
+# #fig_max_dels 2 scatter plots: del_r_max and t_delr_max vs tol and del_theta_max and t_delth_max vs tol
+# fig_max_dels, (ax_dr_max,ax_dth_max)=plt.subplots(1,2)
 sizes=10*exps
-cb1=ax_dr_max.scatter(t_delr_max,del_r_max,s=sizes,c=exps,cmap='RdBu_r')
-ax_dr_max.set_title('Max $\delta$r')
-fig_max_dels.colorbar(cb1,ax=ax_dr_max)
-cb2=ax_dth_max.scatter(t_delth_max,del_theta_max,s=sizes,c=exps,cmap='RdBu_r')
-ax_dth_max.set_title('Max $\delta\\theta$')
-fig_max_dels.colorbar(cb2,ax=ax_dth_max)
-fig_max_dels.suptitle("Tolerance Exp = marker size")
-plt.show()
+# cb1=ax_dr_max.scatter(t_delr_max,del_r_max,s=sizes,c=exps,cmap='RdBu_r')
+# ax_dr_max.set_title('Max $\delta$r')
+# fig_max_dels.colorbar(cb1,ax=ax_dr_max)
+# if x*x==1: 
+#     cb2=ax_dth_max.scatter(t_delth_max,del_theta_max,s=sizes,c=exps,cmap='RdBu_r')
+#     ax_dth_max.set_title('Max $\delta\\theta$')
+#     fig_max_dels.colorbar(cb2,ax=ax_dth_max)
+# fig_max_dels.suptitle("Tolerance Exp = marker size")
+# plt.show()
 
 #fig_pert_sols: 8x6 pert_sol.y[j][i] vs pert_t_arrays[i]
-fig_pert_sols, axs_pert=plt.subplots(1,3)
+fig_pert_sols, axs_pert=plt.subplots(3,1)
 # for c in range(4): # columns (not t),r,th,ph
-for e in range(6): # tol exp
+for e in range(exps.size): # tol exp
     axs_pert[0].plot(pert_t_arrays[e],pert_r_arrays[e],label="1e-%d" % exps[e])
     axs_pert[1].plot(pert_t_arrays[e],pert_theta_arrays[e],label="1e-%d" % exps[e])
     axs_pert[2].plot(pert_t_arrays[e],pert_phi_arrays[e],label="1e-%d" % exps[e])
@@ -652,30 +722,69 @@ axs_pert[1].legend()
 axs_pert[2].set_xlabel('proper time')
 axs_pert[2].set_ylabel('$\phi$')
 axs_pert[2].legend()
-fig_pert_sols.suptitle("Perturbed Solutions")
+fig_pert_sols.suptitle("Perturbed Solution for eps=%f"%eps)
 plt.show()
 
-#fig_t_div plot of t_div vs tol_exp
-fig_t_div, ax_t_div=plt.subplots()
-fig_t_div.suptitle('Proper Time to Divergence')
-ax_t_div.stem(exps,t_div,use_line_collection=True)
-ax_t_div.set_xlabel('tol=1e-X')
-ax_t_div.set_ylabel('proper time')
+# #fig_pert_sols: 8x6 pert_sol.y[j][i] vs pert_t_arrays[i]
+# fig_pert_sols, axs_pert=plt.subplots(1,3)
+# # for c in range(4): # columns (not t),r,th,ph
+# for e in range(exps.size): # tol exp
+#     axs_pert[0].plot(times,pert_r_arrays[e]-base_r_arrays[e],label="1e-%d" % exps[e])
+#     axs_pert[1].plot(times,pert_theta_arrays[e]-base_theta_arrays[e],label="1e-%d" % exps[e])
+#     axs_pert[2].plot(times,pert_phi_arrays[e]-base_phi_arrays[e],label="1e-%d" % exps[e])
+#         # axs_pert[1,c].plot(pert_t_arrays[e],del_r_arrays[e],label="1e-%f" % exps[e])# row for velocity
+# axs_pert[0].set_xlabel('proper time')
+# axs_pert[0].set_ylabel('radius')
+# axs_pert[0].legend()
+# axs_pert[1].set_xlabel('proper time')
+# axs_pert[1].set_ylabel('$\\theta$')
+# axs_pert[1].legend()
+# axs_pert[2].set_xlabel('proper time')
+# axs_pert[2].set_ylabel('$\phi$')
+# axs_pert[2].legend()
+# fig_pert_sols.suptitle("Perturbed Deltas for eps=%f"%eps)
+# plt.show()
+
+fig_pert_sols, axs_pert=plt.subplots(3,1)
+# for c in range(4): # columns (not t),r,th,ph
+for e in range(exps.size-1): # tol exp
+    axs_pert[0].plot(pert_t_arrays[e],pert_r_arrays[-1]-pert_r_arrays[e],label="1e-%d" % exps[e])
+    axs_pert[1].plot(pert_t_arrays[e],pert_theta_arrays[-1]-pert_theta_arrays[e],label="1e-%d" % exps[e])
+    axs_pert[2].plot(pert_t_arrays[e],pert_phi_arrays[-1]-pert_phi_arrays[e],label="1e-%d" % exps[e])
+        # axs_pert[1,c].plot(pert_t_arrays[e],del_r_arrays[e],label="1e-%f" % exps[e])# row for velocity
+axs_pert[0].set_xlabel('proper time')
+axs_pert[0].set_ylabel('radius')
+axs_pert[0].legend()
+axs_pert[1].set_xlabel('proper time')
+axs_pert[1].set_ylabel('$\\theta$')
+axs_pert[1].legend()
+axs_pert[2].set_xlabel('proper time')
+axs_pert[2].set_ylabel('$\phi$')
+axs_pert[2].legend()
+fig_pert_sols.suptitle("Perturbed by eps=%f Delta from tol e-12"%eps)
 plt.show()
 
-#fig_pert_div: 8 subplots y_div vs t_div scatter plot labeled by exp
-fig_y_div, axs_y_div=plt.subplots(1,2)
-cbrdiv=axs_y_div[0].scatter(t_div,[val[1] for val in y_div],s=sizes,c=exps,label='r')
-axs_y_div[0].scatter(t_div,[val[5] for val in y_div],marker='d',s=sizes,c=exps,label='dr/d$\\tau$')
-axs_y_div[0].set_xlabel('time of divergence')
-axs_y_div[0].legend()
-fig_y_div.colorbar(cbrdiv,ax=axs_y_div[0],extend='both')
-cbthdiv=axs_y_div[1].scatter(t_div,[val[2] for val in y_div],s=sizes,c=exps,label='$\\theta$')
-axs_y_div[1].scatter(t_div,[val[6] for val in y_div],marker='d',s=sizes,c=exps,label='d$\\theta$/d$\\tau$')
-axs_y_div[1].set_xlabel('time of divergence')
-axs_y_div[1].legend()
-fig_y_div.colorbar(cbthdiv,ax=axs_y_div[1],extend='both')
-plt.show()
+# #fig_t_div plot of t_div vs tol_exp
+# fig_t_div, ax_t_div=plt.subplots()
+# fig_t_div.suptitle('Proper Time to Divergence')
+# ax_t_div.stem(exps,t_div,use_line_collection=True)
+# ax_t_div.set_xlabel('tol=1e-X')
+# ax_t_div.set_ylabel('proper time')
+# plt.show()
+
+# #fig_pert_div: 8 subplots y_div vs t_div scatter plot labeled by exp
+# fig_y_div, axs_y_div=plt.subplots(1,2)
+# cbrdiv=axs_y_div[0].scatter(t_div,[val[1] for val in y_div],s=sizes,c=exps,label='r')
+# # axs_y_div[0].scatter(t_div,[val[5] for val in y_div],marker='d',s=sizes,c=exps,label='dr/d$\\tau$')
+# axs_y_div[0].set_xlabel('time of divergence')
+# axs_y_div[0].legend()
+# fig_y_div.colorbar(cbrdiv,ax=axs_y_div[0],extend='both')
+# cbthdiv=axs_y_div[1].scatter(t_div,[val[2] for val in y_div],s=sizes,c=exps,label='$\\theta$')
+# # axs_y_div[1].scatter(t_div,[val[6] for val in y_div],marker='d',s=sizes,c=exps,label='d$\\theta$/d$\\tau$')
+# axs_y_div[1].set_xlabel('time of divergence')
+# axs_y_div[1].legend()
+# fig_y_div.colorbar(cbthdiv,ax=axs_y_div[1],extend='both')
+# plt.show()
 
 # print("tau_end=",pert_sol.t[-1],"pert_sol runtime=",time.perf_counter()-restart,"sol.t length=",pert_sol.t.shape)
 # print("pert size=",pert_sol.y.shape)
