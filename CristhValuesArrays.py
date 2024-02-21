@@ -80,7 +80,7 @@ def TotalGamma(a,radius,theta,phi,z_array=np.array([0,0,0,0,0])):
 
     Chr[0,1,0]=Chr[0,0,1]
 
-    Chr[0,1,3]=-1/16 /a * M /mu /( rho*rho ) \
+    Chr[0,1,3]=0 if a==0 else -1/16 /a * M /mu /( rho*rho ) \
         * ( 1/( rhobar*rhobar*rhobar ) ) * ( taubar*taubar ) * ( 8 * ( \
         a*a*a*a ) * ( rho*rho*rho*rho ) * ( rhobar*rhobar*rhobar*rhobar ) + ( \
         -6 * ( a*a ) * ( rho*rho ) * ( rhobar*rhobar ) * ( ( rho + rhobar )*( \
@@ -98,7 +98,7 @@ def TotalGamma(a,radius,theta,phi,z_array=np.array([0,0,0,0,0])):
     Chr[1,0,0]=0.5 * M * mu /rho * ( 2 * rho * rhobar + ( ( \
         rhobar*rhobar ) + ( ( rho*rho ) * ( 1 -4 * ( a*a ) * ( rhobar*rhobar ) ) -8 * ( taubar*taubar ) ) ) )
 
-    Chr[1,0,3]=2 /a * mu * ( 1/( rho*rho*rho ) ) * ( 1/( \
+    Chr[1,0,3]=0 if a==0 else 2 /a * mu * ( 1/( rho*rho*rho ) ) * ( 1/( \
         rhobar*rhobar*rhobar ) ) * ( ( pi*pi ) + ( taubar*taubar ) ) * PsiCDe2bar
 
     Chr[1,1,1]=0.5 * ( -( 1/( mu ) ) * ( 2 * gammabar + mu ) * rho + rhobar )
@@ -109,7 +109,8 @@ def TotalGamma(a,radius,theta,phi,z_array=np.array([0,0,0,0,0])):
  
     Chr[1,3,0]=Chr[1,0,3]
 
-    Chr[1,3,3]=-2/( a*a ) * mu * ( Sigma**5/rho ) \
+    if a==0: Chr[1,3,3]= -1/( radius*radius )  * ( -2 * M + radius ) * ( Delta + 2 * M * radius ) * ( SinTH*SinTH )  
+    else:  Chr[1,3,3]= -2/( a*a ) * mu * ( Sigma**5/rho ) \
         * ( taubar*taubar ) * ( ( 2 * ( gammabar -mubar ) * ( ( rho \
         -rhobar )*( rho -rhobar ) ) -2 * ( ( a*a ) -M * radius \
         ) * ( rho*rho ) * ( rhobar*rhobar ) * ( rho + rhobar ) ) * ( \
@@ -127,7 +128,10 @@ def TotalGamma(a,radius,theta,phi,z_array=np.array([0,0,0,0,0])):
 
     Chr[2,3,0]=Chr[2,0,3]
 
-    Chr[2,3,3]=- 1/sqrtof2 /( a*a ) /( rho*rho*rho )  * ( rho - rhobar ) /( rhobar*rhobar*rhobar )  * \
+    if a==0: Chr[2,3,3]= -1/( radius )**( 5 ) * ( 2 * ( Delta*Delta ) * M + ( 8 * Delta * \
+        ( M*M ) * radius + ( 8 * ( M*M*M ) * ( radius*radius ) + ( -2 * M * ( radius*radius*radius*radius ) + ( \
+        radius )**( 5 ) ) ) ) ) * CosTH * SinTH 
+    else: Chr[2,3,3]= - 1/sqrtof2 /( a*a ) /( rho*rho*rho )  * ( rho - rhobar ) /( rhobar*rhobar*rhobar )  * \
         ( -2* mu * rhobar + M * ( ( ( a*a ) + ( radius*radius ) )*( ( a*a ) + ( \
         radius*radius ) ) ) * ( rho*rho*rho ) * ( rhobar*rhobar*rhobar ) * ( rho + rhobar ) ) * tau
 
@@ -454,13 +458,24 @@ def TotalGamma(a,radius,theta,phi,z_array=np.array([0,0,0,0,0])):
 # print((time.perf_counter()-start)/10000)
 
 
-a=.9
+a=0
 eps_ar=[10**(-5),10**(-6),10**(-9),10**(-12)]
-# 1e-5 diverges around t=6500 for r=12.8
-eps=eps_ar[3]
-zs = eps*np.array([2+1.1j,-3.222,1.03+2.331j,-.1-3.2j,-1.54]) # eps X z_array with Norm ~ O(1)
+eps=eps_ar[0]
+# zs = eps*np.array([2+1.1j,-3.222,1.03+2.331j,-.1-3.2j,-1.54]) # eps * z_array with Norm ~ O(1)
+# These and a,p,e,x should be reported for reproducibility.
 # strong perturbations will cause accelerations too great for scipy's solver to integrate
+# 1e-5 diverges around t=6500 for r=12.8
 
+# Perturbation due to a point-like massive companion
+# eps = M**2 * M_p/radius_p**3
+theta_p,phi_p=np.pi/2,0 
+z0,z1,z2=( -1 + -3 * np.cos( 2 * theta_p ) ),6 * np.cos( theta_p ) * ( np.cos( \
+phi_p ) + complex( 0,-1 ) * np.sin( phi_p ) ) * np.sin( theta_p ),6 * ( \
+np.cos( 2 * phi_p ) + complex( 0,-1 ) * np.sin( 2 * phi_p ) ) * ( \
+np.sin( theta_p )*np.sin( theta_p ) )
+z_companion= eps*np.array([np.conj(z2),np.conj(z1),z0,z1,z2])
+
+zs= z_companion
 # imtolfactor=10**6 # imaginary parts less than imtolfactor*machineprecision will be suppressed.
 # #As far as I have currently found, the largest variances of dChr[a,b,c] from dChr[a,c,b], or any Im[] from zero, or q=0 from q!=0 are ~e-11.
 
@@ -494,7 +509,7 @@ zs = eps*np.array([2+1.1j,-3.222,1.03+2.331j,-.1-3.2j,-1.54]) # eps X z_array wi
 # dChrKN = np.real_if_close(dChrKN,1)
 # print("dChrKN calculated ",time.perf_counter()-start,time.perf_counter()-restart)
 
-p,e,x=5.7,0,.5
+p,e,x=5.7,0,.5 #These and the z's should be reported for reproducibility.
 r1,r2=p/(1+e),p/(1-e)
 zm = np.sqrt(1 - x*x)
 #Equatorial and Circular
@@ -722,7 +737,7 @@ axs_pert[1].legend()
 axs_pert[2].set_xlabel('proper time')
 axs_pert[2].set_ylabel('$\phi$')
 axs_pert[2].legend()
-fig_pert_sols.suptitle("Perturbed Solution for eps=%f"%eps)
+fig_pert_sols.suptitle(f"Point-Like Perturber ($\\theta_p,\phi_p$)={theta_p,phi_p}\n $\epsilon$={eps} a,p,e,x={a,p,e,x}")
 plt.show()
 
 # #fig_pert_sols: 8x6 pert_sol.y[j][i] vs pert_t_arrays[i]
@@ -761,7 +776,7 @@ axs_pert[1].legend()
 axs_pert[2].set_xlabel('proper time')
 axs_pert[2].set_ylabel('$\phi$')
 axs_pert[2].legend()
-fig_pert_sols.suptitle("Perturbed by eps=%f Delta from tol e-12"%eps)
+fig_pert_sols.suptitle(f"Point-Like Perturber ($\\theta_p,\phi_p$)={theta_p,phi_p}\n $\epsilon$={eps} a,p,e,x={a,p,e,x}\n $\Delta$(tol=1e-12)")
 plt.show()
 
 # #fig_t_div plot of t_div vs tol_exp
