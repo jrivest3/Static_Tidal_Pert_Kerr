@@ -1,6 +1,8 @@
 #GeodesicController
 import numpy as np
 import scipy
+import KerrB
+import KerrFrequencies
 
 class Geodesic:
     def __init__(self,a,p,e,x) -> None:

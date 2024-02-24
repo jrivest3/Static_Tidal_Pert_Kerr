@@ -31,7 +31,7 @@ restart=start
 
 M=1
 
-def TotalGamma(a,radius,theta,phi,z_array=np.array([0,0,0,0,0])):
+def TotalGamma(a,radius,theta,phi,z_array=None):#np.array([0,0,0,0,0])):
     '''
     Claculate the Christoffel symbols for Kerr spacetime (-+++) and an arbitrary, static (no time-depenence) tidal (l=2) perturbation.
     The tidal perturbation is defined by (5) real parameters z_m for m in range(-l,l). 
@@ -154,7 +154,7 @@ def TotalGamma(a,radius,theta,phi,z_array=np.array([0,0,0,0,0])):
     Chr[3,3,2]=Chr[3,2,3]
 
 #def dGamma(zs):#,radius,theta,phi):
-    if True: #np.linalg.norm(z_array)!=0:
+    if z_array is not None:#np.linalg.norm(z_array)!=0:
         # Kinnersley Tetrad in Outgoing? Kerr-Newman Coordinates
         lKN=np.array([0,1,0,0])
         nKN=np.array([(radius*radius+a*a),-Delta/1,0,a])*rho*rhobar# decide if Delta is divided by 2 or not
@@ -455,8 +455,8 @@ def TotalGamma(a,radius,theta,phi,z_array=np.array([0,0,0,0,0])):
 
 
 a=0.001
-eps_ar=[0,10**(-12),10**(-9),10**(-8),10**(-6),10**(-5)]
-eps=0 #eps_ar[3]
+eps_ar=[10**(-8),10**(-5)]
+eps=10**(-5) #eps_ar[3]
 # zs = eps*np.array([2+1.1j,-3.222,1.03+2.331j,-.1-3.2j,-1.54]) # eps * z_array with Norm ~ O(1)
 # These and a,p,e,x should be reported for reproducibility.
 # strong perturbations will cause accelerations too great for scipy's solver to integrate
@@ -464,23 +464,23 @@ eps=0 #eps_ar[3]
 
 # Perturbation due to a point-like massive companion
 # eps = M**2 * M_p/radius_p**3
-theta_p,phi_p=np.pi/2,0 
+theta_p,phi_p=np.pi/4,0
 z0,z1,z2=( -1 + -3 * np.cos( 2 * theta_p ) ),6 * np.cos( theta_p ) * ( np.cos( \
 phi_p ) + complex( 0,-1 ) * np.sin( phi_p ) ) * np.sin( theta_p ),6 * ( \
 np.cos( 2 * phi_p ) + complex( 0,-1 ) * np.sin( 2 * phi_p ) ) * ( \
-np.sin( theta_p )*np.sin( theta_p ) )
+np.sin( theta_p )*np.sin( theta_p ) ) #May be better to write in terms of zm and convert trig to exp
 z_companion= np.array([np.conj(z2),np.conj(z1),z0,z1,z2]) # The Norm of z_comp ranges [4, 2*sqrt(19) ~8.7] for theta_p =[0,pi/2]
 
 # zs= eps*z_companion
 
-# imtolfactor=10**6 # imaginary parts less than imtolfactor*machineprecision will be suppressed.
-# #As far as I have currently found, the largest variances of dChr[a,b,c] from dChr[a,c,b], or any Im[] from zero, or q=0 from q!=0 are ~e-11.
+imtolfactor=10**3 # imaginary parts less than imtolfactor*machineprecision will be suppressed.
+#As far as I have currently found, the largest variances of dChr[a,b,c] from dChr[a,c,b], or any Im[] from zero, or q=0 from q!=0 are ~e-11.
 
 # for it in range(0,10000):
 
 #     t=0.001*it
-#     radius=4+0.0012*it
-#     theta=0.0001+3.14*it/10000
+#     radius=6+0.0008*it
+#     theta=0.0001+3.14*3/2*it/10000
 #     phi=4.4*it/10000    
 #     ChrTot=TotalGamma(a,radius,theta,phi,zs)
 #     # Check for complex values
@@ -569,13 +569,13 @@ def base_RHS(t, y):
     time,radius,theta,phi=y[0:4]
     u=y[4:8]
     #xdot=u
-    udot=-1*np.einsum('ijk,j,k->i',TotalGamma(a,radius,theta,phi),u,u)
+    udot=-1*np.einsum('ijk,j,k->i',np.real_if_close(TotalGamma(a,radius,theta,phi),imtolfactor),u,u)
     return np.concatenate((u,udot))
 def pert_RHS(t, y, z1,z2,z3,z4,z5):
     time,radius,theta,phi=y[0:4]
     u=y[4:8]
     #xdot=u
-    udot=-1*np.einsum('ijk,j,k->i',TotalGamma(a,radius,theta,phi,np.array([z1,z2,z3,z4,z5])),u,u)
+    udot=-1*np.einsum('ijk,j,k->i',np.real_if_close(TotalGamma(a,radius,theta,phi,np.array([z1,z2,z3,z4,z5])),imtolfactor),u,u)
     return np.concatenate((u,udot))
 
 
@@ -595,7 +595,7 @@ for epsi in eps_ar:
     fname_eps= 0 if epsi==0 else -np.log10(epsi)
     zs= epsi*z_companion
     #make plots testing errors and divergences for correlation with integrator tolerance level
-    exps=np.arange(7.,13.) #exponents for the integration tolerances
+    exps=np.arange(9,14.) #exponents for the integration tolerances
     t_div=np.zeros(exps.size) # time what integration of perturbed orbit ended noting when the integration ends early do to divergence
     y_div=np.zeros((exps.size,8)) # pert_sol.y at t_div fpr each tolerance level
     # del_r_max=np.zeros(6) # tracker of max variance of base orbit from r0 for when e=0, contains the max vals of del_r for each exp of tolerance
@@ -738,9 +738,11 @@ for epsi in eps_ar:
     axs_pert[2].set_xlabel('proper time')
     axs_pert[2].set_ylabel('$\phi$')
     axs_pert[2].legend()
+    fig_pert_sols.set_figheight(15)
+    fig_pert_sols.set_figwidth(18)
     fig_pert_sols.suptitle(f"Point-Like Perturber ($\\theta_p,\phi_p$)={theta_p,phi_p}\n $\epsilon$={epsi} a,p,e,x={a,p,e,x}") 
-    plt.savefig('PLpert_1em%d.png'%fname_eps)
-
+    plt.savefig(f'PLpert_zp{np.cos(theta_p)}_1em{fname_eps}.png')
+    plt.show()
     # #fig_pert_sols: 8x6 pert_sol.y[j][i] vs pert_t_arrays[i]
     # fig_pert_sols, axs_pert=plt.subplots(1,3)
     # # for c in range(4): # columns (not t),r,th,ph
@@ -778,7 +780,8 @@ for epsi in eps_ar:
     axs_pert[2].set_ylabel('$\phi$')
     axs_pert[2].legend()
     fig_pert_sols.suptitle(f"Point-Like Perturber ($\\theta_p,\phi_p$)={theta_p,phi_p}\n  $\Delta$(tol=1e-12) $\epsilon$={epsi} a,p,e,x={a,p,e,x}") 
-    plt.savefig('PL_del12_1em%d.png'%fname_eps)
+    plt.savefig(f'PL_del12_zp{np.cos(theta_p)}_1em{fname_eps}.png')
+    plt.show()
 
     # #fig_t_div plot of t_div vs tol_exp
     # fig_t_div, ax_t_div=plt.subplots()
