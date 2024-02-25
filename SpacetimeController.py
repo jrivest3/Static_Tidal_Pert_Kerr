@@ -1,10 +1,10 @@
 #SpacetimeController
 
-import time
+# import time
 
 import numpy as np
-import spherical
-import quaternionic
+# import spherical
+# import quaternionic
 
 from CristhValuesArrays import TotalGamma
 import GeodesicController 
@@ -17,8 +17,8 @@ sqrtof3=np.sqrt(3)
 sqrtof5=np.sqrt(5)
 sqrtof6=sqrtof2*sqrtof3
 
-start=time.perf_counter()
-restart=start
+# start=time.perf_counter()
+# restart=start
 
 class Perturber:
     def __init__(self,zs=None,Eij=None,name=None,Model='Pre-set Perturbation') -> None:
@@ -108,7 +108,7 @@ class Spacetime:
         self.OtherSources=[]
         
     def GeodesicReconstructor(self,p,e,x,r_init,theta_init,phi_init):
-        self.Geodesic=GeodesicController.Geodesic(self.a,p,e,x)
+        self.Geodesic=GeodesicController.Geodesic(self.M,self.a,p,e,x)
 
     def Add_Perturbation_Source(self,Model_Or_zs_Or_Eij,*kwargs)->None:
         NewSource=0

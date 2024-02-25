@@ -1,13 +1,14 @@
 #GeodesicController
 import numpy as np
-import scipy
-import KerrB
-import KerrFrequencies
+# import scipy
+from KerrB import *
+from KerrFrequencies import *
 
 class Geodesic:
-    def __init__(self,a,p,e,x) -> None:
+    def __init__(self,M,a,p,e,x) -> None:
         this=self
-        self.M=1
+        self.M=M
+        M=self.M
         self.params=[a,p,e,x]
         self.a=a
         self.p=p
@@ -20,6 +21,7 @@ class Geodesic:
         self.zm=np.sqrt(1-x*x)
         self.r1=p/(1-e)
         self.r2=p/(1+e)
+        zm,r1,r2=self.zm,self.r1,self.r2
 
         # Special case functions defined in KerrB
         this.En = KerrGeoEnergy(a, p, e, x)
