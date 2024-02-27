@@ -455,7 +455,7 @@ def TotalGamma(a,radius,theta,phi,z_array=None):#np.array([0,0,0,0,0])):
 
 
 a=0.001
-eps_ar=[10**(-8),10**(-5)]
+eps_ar=[0,10**(-12),10**(-9)]#,10**(-6)]
 eps=10**(-5) #eps_ar[3]
 # zs = eps*np.array([2+1.1j,-3.222,1.03+2.331j,-.1-3.2j,-1.54]) # eps * z_array with Norm ~ O(1)
 # These and a,p,e,x should be reported for reproducibility.
@@ -464,7 +464,7 @@ eps=10**(-5) #eps_ar[3]
 
 # Perturbation due to a point-like massive companion
 # eps = M**2 * M_p/radius_p**3
-theta_p,phi_p=np.pi/4,0
+theta_p,phi_p=np.pi/2,np.pi/2
 z0,z1,z2=( -1 + -3 * np.cos( 2 * theta_p ) ),6 * np.cos( theta_p ) * ( np.cos( \
 phi_p ) + complex( 0,-1 ) * np.sin( phi_p ) ) * np.sin( theta_p ),6 * ( \
 np.cos( 2 * phi_p ) + complex( 0,-1 ) * np.sin( 2 * phi_p ) ) * ( \
@@ -586,16 +586,15 @@ td0,rd0,thd0,phd0=(a * (Lz - a * En * (1 - usq)) + (r0 *r0 + a *a) * ((r0 *r0 + 
 
 ICs=[t0,r0,th0,ph0,td0,rd0,thd0,phd0]
 
-tau_end,Nsteps=10000,5
+tau_end,Nsteps=10000,5 # tau_end= 10000*ceil(T_orbit_for_r_min)
 
 
 import matplotlib.pyplot as plt
-
-for epsi in eps_ar:
-    fname_eps= 0 if epsi==0 else -np.log10(epsi)
-    zs= epsi*z_companion
-    #make plots testing errors and divergences for correlation with integrator tolerance level
-    exps=np.arange(9,14.) #exponents for the integration tolerances
+#make plots testing errors and divergences for correlation with integrator tolerance level
+exps=np.arange(12,13.) #exponents for the integration tolerances
+for i in range(exps.size):
+    rtol, atol = 10.**(-exps[i]), 10.**(-exps[i])
+    
     t_div=np.zeros(exps.size) # time what integration of perturbed orbit ended noting when the integration ends early do to divergence
     y_div=np.zeros((exps.size,8)) # pert_sol.y at t_div fpr each tolerance level
     # del_r_max=np.zeros(6) # tracker of max variance of base orbit from r0 for when e=0, contains the max vals of del_r for each exp of tolerance
@@ -613,10 +612,11 @@ for epsi in eps_ar:
     pert_theta_arrays=[]
     pert_phi_arrays=[]
     # pert_ys=[]
-    times=np.linspace(0,tau_end,tau_end)
+    times=np.linspace(0,tau_end,tau_end*10)# tau_end/floor(T_orbit_for_r_min)*20 or 10000orbits*20 or more
 
-    for i in range(exps.size):
-        rtol, atol = 10.**(-exps[i]), 10.**(-exps[i])
+    for epsi in eps_ar:
+        
+        zs= epsi*z_companion
         # start=time.perf_counter()
         # base_sol=ODE(base_RHS,[0,tau_end],ICs,t_eval=times,rtol=rtol,atol=atol)
         # # base_t_arrays.append(base_sol.t)
@@ -724,10 +724,11 @@ for epsi in eps_ar:
     #fig_pert_sols: 8x6 pert_sol.y[j][i] vs pert_t_arrays[i]
     fig_pert_sols, axs_pert=plt.subplots(3,1)
     # for c in range(4): # columns (not t),r,th,ph
-    for exp in range(exps.size): # tol exp
-        axs_pert[0].plot(pert_t_arrays[exp],pert_r_arrays[exp],label="tol=1e-%d" % exps[exp])
-        axs_pert[1].plot(pert_t_arrays[exp],pert_theta_arrays[exp],label="tol=1e-%d" % exps[exp])
-        axs_pert[2].plot(pert_t_arrays[exp],pert_phi_arrays[exp],label="tol=1e-%d" % exps[exp])
+    for exp in range(len(eps_ar)):
+        fname_eps= 0 if eps_ar[exp]==0 else -np.log10(eps_ar[exp])# for exp in range(exps.size): # tol exp
+        axs_pert[0].plot(pert_t_arrays[exp],pert_r_arrays[exp],label=f"$\epsilon$={eps_ar[exp]}")# "tol=1e-%d" % exps[exp])
+        axs_pert[1].plot(pert_t_arrays[exp],pert_theta_arrays[exp],label=f"$\epsilon$={eps_ar[exp]}")# "tol=1e-%d" % exps[exp])
+        axs_pert[2].plot(pert_t_arrays[exp],pert_phi_arrays[exp],label=f"$\epsilon$={eps_ar[exp]}")# "tol=1e-%d" % exps[exp])
             # axs_pert[1,c].plot(pert_t_arrays[exp],del_r_arrays[exp],label="1e-%f" % exps[exp])# row for velocity
     axs_pert[0].set_xlabel('proper time')
     axs_pert[0].set_ylabel('radius')
@@ -740,8 +741,8 @@ for epsi in eps_ar:
     axs_pert[2].legend()
     fig_pert_sols.set_figheight(15)
     fig_pert_sols.set_figwidth(18)
-    fig_pert_sols.suptitle(f"Point-Like Perturber ($\\theta_p,\phi_p$)={theta_p,phi_p}\n $\epsilon$={epsi} a,p,e,x={a,p,e,x}") 
-    plt.savefig(f'PLpert_zp{np.cos(theta_p)}_1em{fname_eps}.png')
+    fig_pert_sols.suptitle(f"Point-Like Perturber ($\\theta_p,\phi_p$)={theta_p,phi_p}\n tol=1e-{exps[i]} a,p,e,x={a,p,e,x}") 
+    plt.savefig(f'PLpert_zp{np.cos(theta_p)}_fixedstepsize.png') # _1em{fname_eps}.png')
     plt.show()
     # #fig_pert_sols: 8x6 pert_sol.y[j][i] vs pert_t_arrays[i]
     # fig_pert_sols, axs_pert=plt.subplots(1,3)
@@ -763,25 +764,25 @@ for epsi in eps_ar:
     # fig_pert_sols.suptitle("Perturbed Deltas for eps=%f"%eps)
     # plt.show()
 
-    fig_pert_sols, axs_pert=plt.subplots(3,1)
-    # for c in range(4): # columns (not t),r,th,ph
-    for exp in range(exps.size-1): # tol exp
-        axs_pert[0].plot(pert_t_arrays[exp],pert_r_arrays[-1]-pert_r_arrays[exp],label="tol=1e-%d" % exps[exp])
-        axs_pert[1].plot(pert_t_arrays[exp],pert_theta_arrays[-1]-pert_theta_arrays[exp],label="tol=1e-%d" % exps[exp])
-        axs_pert[2].plot(pert_t_arrays[exp],pert_phi_arrays[-1]-pert_phi_arrays[exp],label="tol=1e-%d" % exps[exp])
-            # axs_pert[1,c].plot(pert_t_arrays[exp],del_r_arrays[exp],label="1e-%f" % exps[exp])# row for velocity
-    axs_pert[0].set_xlabel('proper time')
-    axs_pert[0].set_ylabel('radius')
-    axs_pert[0].legend()
-    axs_pert[1].set_xlabel('proper time')
-    axs_pert[1].set_ylabel('$\\theta$')
-    axs_pert[1].legend()
-    axs_pert[2].set_xlabel('proper time')
-    axs_pert[2].set_ylabel('$\phi$')
-    axs_pert[2].legend()
-    fig_pert_sols.suptitle(f"Point-Like Perturber ($\\theta_p,\phi_p$)={theta_p,phi_p}\n  $\Delta$(tol=1e-12) $\epsilon$={epsi} a,p,e,x={a,p,e,x}") 
-    plt.savefig(f'PL_del12_zp{np.cos(theta_p)}_1em{fname_eps}.png')
-    plt.show()
+    # fig_pert_sols, axs_pert=plt.subplots(3,1)
+    # # for c in range(4): # columns (not t),r,th,ph
+    # for exp in range(exps.size-1): # tol exp
+    #     axs_pert[0].plot(pert_t_arrays[exp],pert_r_arrays[-1]-pert_r_arrays[exp],label="tol=1e-%d" % exps[exp])
+    #     axs_pert[1].plot(pert_t_arrays[exp],pert_theta_arrays[-1]-pert_theta_arrays[exp],label="tol=1e-%d" % exps[exp])
+    #     axs_pert[2].plot(pert_t_arrays[exp],pert_phi_arrays[-1]-pert_phi_arrays[exp],label="tol=1e-%d" % exps[exp])
+    #         # axs_pert[1,c].plot(pert_t_arrays[exp],del_r_arrays[exp],label="1e-%f" % exps[exp])# row for velocity
+    # axs_pert[0].set_xlabel('proper time')
+    # axs_pert[0].set_ylabel('radius')
+    # axs_pert[0].legend()
+    # axs_pert[1].set_xlabel('proper time')
+    # axs_pert[1].set_ylabel('$\\theta$')
+    # axs_pert[1].legend()
+    # axs_pert[2].set_xlabel('proper time')
+    # axs_pert[2].set_ylabel('$\phi$')
+    # axs_pert[2].legend()
+    # fig_pert_sols.suptitle(f"Point-Like Perturber ($\\theta_p,\phi_p$)={theta_p,phi_p}\n  $\Delta$(tol=1e-12) $\epsilon$={epsi} a,p,e,x={a,p,e,x}") 
+    # plt.savefig(f'PL_del12_zp{np.cos(theta_p)}_1em{fname_eps}.png')
+    # plt.show()
 
     # #fig_t_div plot of t_div vs tol_exp
     # fig_t_div, ax_t_div=plt.subplots()
