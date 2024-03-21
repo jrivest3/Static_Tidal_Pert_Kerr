@@ -41,7 +41,7 @@ class Perturber:
             sqrtpiover5=np.sqrt(np.pi/5)
             Eij=self.Eij
             z0,z1,z2=-2*np.sqrt(6)*sqrtpiover5*(Eij[0,0]+Eij[1,1]),-4*sqrtpiover5*(Eij[0,2]-complex(0,1)*Eij[1,2]),2*sqrtpiover5*(Eij[0,0]-Eij[1,1]-complex(0,2)*Eij[0,1])
-            self.z_array=np.array([np.conj(z2),-z1,z0,z1,z2])
+            self.z_array=np.array([np.conj(z2),-np.conj(z1),z0,z1,z2])
             # # Harmonic coordinates
             # z0,z1,z2=-2*(Eij[0,0]+Eij[1,1]),-2*(Eij[0,2]-complex(0,1)*Eij[1,2]),-2*(Eij[0,0]-Eij[1,1])+complex(0,4)*Eij[0,1]
             # self.z_array=np.array([np.conj(z2),np.conj(z1),z0,z1,z2])
@@ -94,6 +94,9 @@ class Perturber:
     #             else: self.make_zs_from_Eij()
     #     return wrapper
 
+    def add_and_normalize(self,a,b):#,epsilon):
+        pass #divide by new Norm, maybe multiply by optional given epsilon 
+
     def rotate_zs(self,rot_theta,rot_phi)->None:
         pass
 
@@ -121,9 +124,9 @@ class PointMass(Perturber):
                 CosTHp=np.cos(theta_p)
                 SinTHp=np.sin(theta_p)
                 expPHp=np.exp(1.j*phi_p)
-                z0,z1,z2=2*sqrtof6*sqrtpiover5* ( 1 - 3 * CosTHp*CosTHp ), 12*sqrtpiover5 *expPHp *CosTHp*SinTHp, -6*sqrtpiover5 /expPHp/expPHp *SinTHp*SinTHp#Cartesion (BL?)
+                z0,z1,z2=2*sqrtof6*sqrtpiover5* ( 1 - 3 * CosTHp*CosTHp ), 12*sqrtpiover5 /expPHp *CosTHp*SinTHp, -6*sqrtpiover5 /expPHp/expPHp *SinTHp*SinTHp#Cartesion (BL?)
                 Norm = 4*sqrtof6*sqrtpiover5
-                self.z_characteristic= np.array([np.conj(z2),-z1,z0,z1,z2])/Norm # Norm = 4*sqrt(6*pi/5)~7.8 for all theta and phi.
+                self.z_characteristic= np.array([np.conj(z2),-np.conj(z1),z0,z1,z2])/Norm # Norm = 4*sqrt(6*pi/5)~7.8 for all theta and phi.
                 # # Harmonic Coordinates 
                 # z0,z1,z2=( -1 + -3 * np.cos( 2 * theta_p ) ),6 * np.cos( theta_p ) * ( np.cos( \ 
                 # phi_p ) + complex( 0,-1 ) * np.sin( phi_p ) ) * np.sin( theta_p ),6 * ( \
@@ -174,11 +177,11 @@ class AccretionRing(Perturber):
                 z0,z1,z2=   sqrtof6*sqrtpiover5*( 2 + -3 * zm*zm ), \
                             8*sqrtpiover5/( np.pi )/( zm ) * \
                                 ( ( -1 + 2 * ( zm*zm ) ) * ellipe( ( zm*zm ) ) - ( -1 + ( zm*zm ) ) * ellipk( ( zm*zm ) ) ) \
-                                *expPsi, \
+                                /expPsi, \
                             3/2 * sqrtpiover5 * ( zm*zm ) /expPsi/expPsi
                 zchar=np.array([np.conj(z2),-z1,z0,z1,z2])
-                Norm=np.linalg.norm(zchar) # ~3.84 near pole, peaks ~4.01 at theta~0.46276 (just over 7*pi/48), 2*sqrtof6*sqrtpiover5 ~3.88 at the equator
-                self.z_characteristic= np.array([np.conj(z2),-z1,z0,z1,z2])/Norm
+                Norm=np.linalg.norm(zchar) # ~3.84 near pole, peaks ~4.01 at theta~0.46276 (just over 7*pi/48, 7.070452*pi/48), 2*sqrtof6*sqrtpiover5 ~3.88 at the equator
+                self.z_characteristic= np.array([np.conj(z2),-np.conj(z1),z0,z1,z2])/Norm
                 # # Harmonic Coordinates
                 # z0,z1,z2=   2 + -3 * ( zm*zm ), \
                 #             4/( np.pi )/( zm ) * \

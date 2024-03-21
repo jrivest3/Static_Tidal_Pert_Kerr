@@ -80,13 +80,12 @@ def TotalGamma(a,radius,theta,phi_star,z_array=None,M=1):#np.array([0,0,0,0,0]))
     * rho * rhobar + ( ( rhobar*rhobar ) + ( rho*rho ) * ( 1 + 4 * ( a*a \
     ) * ( rhobar*rhobar ) ) ) ) * ( taubar*taubar )
     
-    ChrKN[0,1,2]=1/sqrtof2 * ( 1/( rho ) ) * ( rho + -1 * rhobar ) * ( \
-    1/( rhobar ) ) * taubar
+    ChrKN[0,1,2]= 1/sqrtof2 * ( 1/( rhobar ) - 1/( rho ) ) * taubar# 1/sqrtof2 * ( 1/( rho ) ) * ( rho - rhobar ) * ( 1/( rhobar ) ) * taubar
     ChrKN[0,1,3]=-0.5 * a * ( rho + rhobar ) * ( SinTH*SinTH )
     ChrKN[0,2,0]=ChrKN[0,0,2]
     ChrKN[0,2,1]=ChrKN[0,1,2]
     ChrKN[0,2,2]=-0.5 * ( Delta + 2 * M * radius ) * ( rho + rhobar )
-    ChrKN[0,2,3]=-1 * ( a*a*a ) * M * rho * rhobar * ( rho + rhobar ) * \
+    ChrKN[0,2,3]=- ( a*a*a ) * M * rho * rhobar * ( rho + rhobar ) * \
     CosTH * ( SinTH*SinTH*SinTH )
     ChrKN[0,3,0]=ChrKN[0,0,3]
     ChrKN[0,3,1]=ChrKN[0,1,3]
@@ -94,19 +93,19 @@ def TotalGamma(a,radius,theta,phi_star,z_array=None,M=1):#np.array([0,0,0,0,0]))
     ChrKN[0,3,3]=1/16 * ( 1/( a*a ) ) * ( 1/( rho*rho*rho*rho ) ) * ( 1/( \
     rhobar*rhobar*rhobar*rhobar ) ) * ( ( a*a ) + 1/4 * ( 1/( rho*rho ) ) \
     * ( 1/( rhobar*rhobar ) ) * ( ( rho + rhobar )*( rho + rhobar ) ) ) * \
-    ( -4 * ( gammabar + -1 * mubar ) * ( ( rho + -1 * rhobar )*( rho + -1 \
-    * rhobar )*( rho + -1 * rhobar )*( rho + -1 * rhobar ) ) + ( 8 * ( \
+    ( -4 * ( gammabar - mubar ) * ( ( rho - rhobar )*( rho -1 \
+    * rhobar )*( rho - rhobar )*( rho - rhobar ) ) + ( 8 * ( \
     a*a ) * M * ( rho*rho*rho ) * ( rhobar*rhobar*rhobar ) * ( ( rho + \
     rhobar )*( rho + rhobar ) ) + ( ( ( rho + rhobar ) )**( 5 ) + 2 * ( ( \
-    rho + -1 * rhobar )*( rho + -1 * rhobar ) ) * ( 4 * ( a*a ) * M * ( \
-    rho*rho*rho ) * ( rhobar*rhobar*rhobar ) + -1 * ( ( rho + rhobar )*( \
-    rho + rhobar ) ) * ( rho + ( rhobar + -1 * M * rho * rhobar ) ) ) ) ) \
+    rho - rhobar )*( rho - rhobar ) ) * ( 4 * ( a*a ) * M * ( \
+    rho*rho*rho ) * ( rhobar*rhobar*rhobar ) - ( ( rho + rhobar )*( \
+    rho + rhobar ) ) * ( rho + ( rhobar - M * rho * rhobar ) ) ) ) ) \
     ) * ( taubar*taubar )
     ChrKN[1,0,0]=1/4 * M * ( ( rho*rho ) + ( rhobar*rhobar ) ) * ( 2 * ( \
-    a*a ) * rho * rhobar + ( 2 * M * ( rho + rhobar ) + -1 * radius * ( rho + \
+    a*a ) * rho * rhobar + ( 2 * M * ( rho + rhobar ) - radius * ( rho + \
     rhobar ) ) )
     ChrKN[1,0,1]=1/4 * M * ( 2 * rho * rhobar + ( ( rhobar*rhobar ) + ( ( \
-    rho*rho ) * ( 1 + -4 * ( a*a ) * ( rhobar*rhobar ) ) + -8 * ( \
+    rho*rho ) * ( 1 -4 * ( a*a ) * ( rhobar*rhobar ) ) -8 * ( \
     taubar*taubar ) ) ) )
     
     ChrKN[1,0,3]=2 * ( 1/( a ) ) * mu * ( 1/( rho*rho*rho ) ) * ( 1/( \
@@ -114,10 +113,9 @@ def TotalGamma(a,radius,theta,phi_star,z_array=None,M=1):#np.array([0,0,0,0,0]))
     PsiCDe2bar
     ChrKN[1,1,0]=ChrKN[1,0,1]
     
-    ChrKN[1,1,2]=1/sqrtof2 * ( -1 * ( 1/( rho ) ) + ( 1/( rhobar ) ) ) * \
-    tau
+    ChrKN[1,1,2]= -ChrKN[0,1,2]# 1/sqrtof2 * ( - ( 1/( rho ) ) + ( 1/( rhobar ) ) ) * tau # tau=-taubar
     ChrKN[1,1,3]=( 1/( a ) ) * ( 1/( rho*rho*rho ) ) * ( 1/( \
-    rhobar*rhobar*rhobar ) ) * ( 4 * rhobar * ( gammabar * rho + -1 * mu \
+    rhobar*rhobar*rhobar ) ) * ( 4 * rhobar * ( gammabar * rho - mu \
     * rhobar ) * ( taubar*taubar ) + rho * ( ( pi + taubar )*( pi + \
     taubar ) ) * PsiCDe2bar )
     
@@ -128,51 +126,49 @@ def TotalGamma(a,radius,theta,phi_star,z_array=None,M=1):#np.array([0,0,0,0,0]))
     ChrKN[1,3,1]=ChrKN[1,1,3]
     
     ChrKN[1,3,3]=-1/8 * ( 1/( a*a ) ) * mu * ( 1/( rho )**( 6 ) ) * ( 1/( \
-    rhobar )**( 5 ) ) * ( -4 * ( gammabar + -1 * mubar ) * ( ( rho + -1 * \
-    rhobar )*( rho + -1 * rhobar )*( rho + -1 * rhobar )*( rho + -1 * \
+    rhobar )**( 5 ) ) * ( -4 * ( gammabar - mubar ) * ( ( rho - \
+    rhobar )*( rho - rhobar )*( rho - rhobar )*( rho - \
     rhobar ) ) + ( 8 * ( a*a ) * M * ( rho*rho*rho ) * ( \
     rhobar*rhobar*rhobar ) * ( ( rho + rhobar )*( rho + rhobar ) ) + ( ( \
-    ( rho + rhobar ) )**( 5 ) + 2 * ( ( rho + -1 * rhobar )*( rho + -1 * \
+    ( rho + rhobar ) )**( 5 ) + 2 * ( ( rho - rhobar )*( rho - \
     rhobar ) ) * ( 4 * ( a*a ) * M * ( rho*rho*rho ) * ( \
-    rhobar*rhobar*rhobar ) + -1 * ( ( rho + rhobar )*( rho + rhobar ) ) * \
-    ( rho + ( rhobar + -1 * M * rho * rhobar ) ) ) ) ) ) * ( \
+    rhobar*rhobar*rhobar ) - ( ( rho + rhobar )*( rho + rhobar ) ) * \
+    ( rho + ( rhobar - M * rho * rhobar ) ) ) ) ) ) * ( \
     taubar*taubar )
     ChrKN[2,0,0]=( a*a ) * M * ( rho*rho ) * ( rhobar*rhobar ) * ( rho + \
     rhobar ) * CosTH * SinTH
     
-    ChrKN[2,0,3]=-1 * a * M * ( Delta + 2 * M * radius ) * ( rho*rho ) * ( \
+    ChrKN[2,0,3]=- a * M * ( Delta + 2 * M * radius ) * ( rho*rho ) * ( \
     rhobar*rhobar ) * ( rho + rhobar ) * CosTH * SinTH
     
-    ChrKN[2,1,2]=0.5 * ( -1 * rho + -1 * rhobar )
-    ChrKN[2,1,3]=1/sqrtof2 * ( 1/( a ) ) * ( -1 * ( 1/( rho ) ) + ( 1/( \
-    rhobar ) ) ) * tau
+    ChrKN[2,1,2]=-0.5 * ( rho + rhobar )
+    ChrKN[2,1,3]=ChrKN[1,1,2]/a # 1/sqrtof2 * ( 1/( a ) ) * ( - ( 1/( rho ) ) + ( 1/( rhobar ) ) ) * tau
     
     ChrKN[2,2,1]=ChrKN[2,1,2]
-    ChrKN[2,2,2]=1/sqrtof2 * ( -1 * ( 1/( rho ) ) + ( 1/( rhobar ) ) ) * \
-    tau
+    ChrKN[2,2,2]=ChrKN[1,1,2] # 1/sqrtof2 * ( - ( 1/( rho ) ) + ( 1/( rhobar ) ) ) * \tau
     
     ChrKN[2,3,0]=ChrKN[2,0,3]
     ChrKN[2,3,1]=ChrKN[2,1,3]
     
     ChrKN[2,3,3]=1/64 * 1/sqrtof2 * ( 1/( a*a ) ) * ( 1/( rho*rho*rho*rho \
-    ) ) * ( -1 * ( 1/( rho ) ) + ( 1/( rhobar ) ) ) * ( 1/( \
-    rhobar*rhobar*rhobar*rhobar ) ) * tau * ( 8 * mu * ( ( rho + -1 * \
-    rhobar )*( rho + -1 * rhobar )*( rho + -1 * rhobar )*( rho + -1 * \
+    ) ) * ( - ( 1/( rho ) ) + ( 1/( rhobar ) ) ) * ( 1/( \
+    rhobar*rhobar*rhobar*rhobar ) ) * tau * ( 8 * mu * ( ( rho - \
+    rhobar )*( rho - rhobar )*( rho - rhobar )*( rho - \
     rhobar ) ) * rhobar + ( -8 * ( a*a ) * ( 2 * M + radius ) * ( rho*rho*rho \
     ) * ( rhobar*rhobar*rhobar ) * ( ( rho + rhobar )*( rho + rhobar )*( \
     rho + rhobar ) ) + ( ( ( rho + rhobar ) )**( 6 ) + ( -64 * ( a*a ) * \
     ( 2 * ( M*M ) * radius + Delta * ( M + radius ) ) * ( rho )**( 5 ) * ( rhobar \
-    )**( 5 ) * ( rho + rhobar ) * ( CosTH*CosTH ) + -64 * ( a*a ) * M * ( \
+    )**( 5 ) * ( rho + rhobar ) * ( CosTH*CosTH ) -64 * ( a*a ) * M * ( \
     Delta + 2 * M * radius ) * ( rho )**( 5 ) * ( rhobar )**( 5 ) * ( rho + \
     rhobar ) * ( SinTH*SinTH ) ) ) ) )
     ChrKN[3,0,0]=-0.5 * a * ( rhobar * PsiCDe2 + rho * PsiCDe2bar )
     
     ChrKN[3,0,2]=-2 * sqrtof2 * a * M * beta * rho * ( rho + rhobar )
-    ChrKN[3,0,3]=-1 * Sigma * ( 1/( rhobar ) ) * ( ( pi*pi ) + ( \
+    ChrKN[3,0,3]=- Sigma * ( 1/( rhobar ) ) * ( ( pi*pi ) + ( \
     taubar*taubar ) ) * PsiCDe2bar
     
     ChrKN[3,1,2]=-2 * sqrtof2 * a * beta * rho
-    ChrKN[3,1,3]=0.5 * ( -1 * rho + -1 * rhobar )
+    ChrKN[3,1,3]=ChrKN[2,1,2] # 0.5 * ( - rho - rhobar )
     ChrKN[3,2,0]=ChrKN[3,0,2]
     ChrKN[3,2,1]=ChrKN[3,1,2]
     ChrKN[3,2,2]=-0.5 * a * ( rho + rhobar )
@@ -183,22 +179,22 @@ def TotalGamma(a,radius,theta,phi_star,z_array=None,M=1):#np.array([0,0,0,0,0]))
     1/( rho*rho*rho*rho ) ) * ( 1/( rhobar*rhobar*rhobar*rhobar ) ) * ( ( \
     rho + rhobar )*( rho + rhobar )*( rho + rhobar )*( rho + rhobar ) ) + \
     ( 2 * ( 1/( rho*rho*rho ) ) * ( 1/( rhobar*rhobar*rhobar ) ) * ( 2 * \
-    ( a*a ) * rho * rhobar + -1 * Deltap * ( rho + rhobar ) ) * ( ( a*a ) \
+    ( a*a ) * rho * rhobar - Deltap * ( rho + rhobar ) ) * ( ( a*a ) \
     * ( rho*rho ) * ( rhobar*rhobar ) + 4 * ( taubar*taubar ) ) + ( \
     a*a*a*a ) * np.cos( 4 * theta ) ) ) ) ) )
-    ChrKN[3,3,0]=-1 * Sigma * ( 1/( rhobar ) ) * ( ( pi*pi ) + ( \
+    ChrKN[3,3,0]=- Sigma * ( 1/( rhobar ) ) * ( ( pi*pi ) + ( \
     taubar*taubar ) ) * PsiCDe2bar
     ChrKN[3,3,1]=ChrKN[3,1,3]
     ChrKN[3,3,2]=ChrKN[3,2,3]
     ChrKN[3,3,3]=1/16 * ( 1/( a ) ) * ( 1/( rho*rho*rho*rho ) ) * ( 1/( \
-    rhobar*rhobar*rhobar*rhobar ) ) * ( -4 * ( gammabar + -1 * mubar ) * \
-    ( ( rho + -1 * rhobar )*( rho + -1 * rhobar )*( rho + -1 * rhobar )*( \
-    rho + -1 * rhobar ) ) + ( 8 * ( a*a ) * M * ( rho*rho*rho ) * ( \
+    rhobar*rhobar*rhobar*rhobar ) ) * ( -4 * ( gammabar - mubar ) * \
+    ( ( rho - rhobar )*( rho - rhobar )*( rho - rhobar )*( \
+    rho - rhobar ) ) + ( 8 * ( a*a ) * M * ( rho*rho*rho ) * ( \
     rhobar*rhobar*rhobar ) * ( ( rho + rhobar )*( rho + rhobar ) ) + ( ( \
-    ( rho + rhobar ) )**( 5 ) + 2 * ( ( rho + -1 * rhobar )*( rho + -1 * \
+    ( rho + rhobar ) )**( 5 ) + 2 * ( ( rho - rhobar )*( rho - \
     rhobar ) ) * ( 4 * ( a*a ) * M * ( rho*rho*rho ) * ( \
-    rhobar*rhobar*rhobar ) + -1 * ( ( rho + rhobar )*( rho + rhobar ) ) * \
-    ( rho + ( rhobar + -1 * M * rho * rhobar ) ) ) ) ) ) * ( \
+    rhobar*rhobar*rhobar ) - ( ( rho + rhobar )*( rho + rhobar ) ) * \
+    ( rho + ( rhobar - M * rho * rhobar ) ) ) ) ) ) * ( \
     taubar*taubar )
     #BL coords
     # Chr=np.zeros((4,4,4),np.complex128)
@@ -288,12 +284,12 @@ def TotalGamma(a,radius,theta,phi_star,z_array=None,M=1):#np.array([0,0,0,0,0]))
     if z_array is not None:#np.linalg.norm(z_array)!=0:
         # Kinnersley Tetrad in Outgoing Kerr-Newman Coordinates
         lKN=np.array([0,1,0,0])
-        nKN=np.array([(radius*radius+a*a),-Delta/1,0,a])*rho*rhobar# decide if Delta is divided by 2 or not
+        nKN=np.array([(radius*radius+a*a),-Delta/2,0,a])*rho*rhobar# decide if Delta is divided by 2 or not
         mKN=-rhobar/sqrtof2*np.array([1.j*a*SinTH,0,1,1.j/SinTH])
         mbKN=np.conj(mKN)#-rho/sqrtof2*np.array([-1.j*a*SinTH,0,1,-1.j/SinTH])
 
         lKNd=np.transpose(np.array([-1, 0, 0, a* SinTH*SinTH])) # negate each (-1*) for (+---), but doesn't change end result
-        nKNd=np.transpose(np.array([(-Delta*rho*rhobar)/1, -1, 0, (1/1)*Delta*rho*rhobar * a*SinTH*SinTH]))
+        nKNd=np.transpose(np.array([(-Delta*rho*rhobar)/2, -1, 0, (1/2)*Delta*rho*rhobar * a*SinTH*SinTH]))
         mKNd=np.transpose(np.array([-1.j*rhobar* a*SinTH/sqrtof2, 0, 1/(sqrtof2*rho), 1.j*rhobar*(radius*radius + a*a)*SinTH/sqrtof2]))
         mbKNd=np.conj(mKNd)#np.transpose(np.array([ 1.j*rho* a*SinTH/sqrtof2, 0, 1/(sqrtof2*rhobar), -1.j*rho*(radius*radius + a*a)*SinTH/sqrtof2]))
 
@@ -301,9 +297,14 @@ def TotalGamma(a,radius,theta,phi_star,z_array=None,M=1):#np.array([0,0,0,0,0]))
         InvTet=np.array([lKNd,nKNd,mKNd,mbKNd])
 
         sY2m=swsh_array(ell, theta, phi_star).reshape((2*ell+1,2*ell+1))
-        # Assume z's are all real, so the conjugate relation is maintained.
-        #Yn22m= z_array*sY2m[:,0] # s=-2 # not currently used in the calculation
-        Yn12m= z_array*sY2m[:,1] # s=-1
+        # The z's may be complex, but have a reality condition
+        # z[-m]=(-1)**m * np.conj(z[m]),
+        # while Y[-s]l[-m] = (-1)**(m+s) * np.conj(Y[s]l[m]) so the conjugate relation is maintained.
+        # So, np.conj(z[m]*Y[s]l[m])=(-1)**(s) * z[-m] * Y[-s]l[-m]
+        # The z's are taken to be constants, and every instance of |s|=<2 is the result of a derivative.
+        # s=0 can be reached by derivatives of both s=+/-1, but we only take derivatives s=2 and then conjugate the results.
+        #Yn22m= np.conj(z_array)*sY2m[:,0] # s=-2 # not currently used in the calculation
+        Yn12m= z_array*sY2m[:,1] # s=-1 # This only appears in Eth'hnnbar where three spin-lowering's occur
         Y02m = z_array*sY2m[:,2] # s= 0
         Y12m = z_array*sY2m[:,3] # s= 1
         Y22m = z_array*sY2m[:,4] # s= 2
@@ -313,12 +314,12 @@ def TotalGamma(a,radius,theta,phi_star,z_array=None,M=1):#np.array([0,0,0,0,0]))
         # ell=2
 
         # for ell>2, these need to be either arrays or functions of m
-        zGqlm= Delta*Delta/12
+        Gqlm= Delta*Delta/12
         # my h-components are in a form that only contain zG, ThornzG, and ThornThornzG.
         # dChr will contain first derivatives of the h-comp's which are also in terms of Thorn's only
-        ThornzGqlm= Deltap*Delta/6
-        ThornThornzGqlm= (Deltapp*Delta+Deltap*Deltap)/6
-        ThornThornThornzGqlm= Deltap#(*Deltapp/2)
+        ThornGqlm= Deltap*Delta/6
+        ThornThornGqlm= (Deltapp*Delta+Deltap*Deltap)/6
+        ThornThornThornGqlm= Deltap#(*Deltapp/2)
 
         # Pieces of dGamma
 
@@ -330,109 +331,215 @@ def TotalGamma(a,radius,theta,phi_star,z_array=None,M=1):#np.array([0,0,0,0,0]))
 
         # At some point, we must sum over m
         # if ell==2
-        hnndag=np.sum(2 * zGqlm * ( 2 * Y12m * pi * rhobar - sqrtof6 * Y02m * ( rho*rho ) )
-            )
-        hnm=np.sum(( 2 * Y12m * rho * ( ThornzGqlm + zGqlm * ( rhobar + rho ) ) + ThornzGqlm * Y22m * ( pi - taubar ) )
-            )
-        hmm=np.sum(0 - Y22m * ( ThornThornzGqlm + 2 * ThornzGqlm * rhobar )
-            )
+        hnndag=np.sum(Gqlm * rho * (2 * sqrtof2 * Y12m * taubar - sqrtof6 * Y02m * rho)
+                      )
+        hnm=np.sum(( sqrtof2 * Y12m * rho * ( ThornGqlm + Gqlm * ( rhobar + rho ) ) + ThornGqlm * Y22m * ( pi - taubar ) )
+                   )
+        hmm=np.sum(- Y22m * ( ThornThornGqlm + 2 * ThornGqlm * rhobar )
+                   )
+        # hnndag=np.sum(2 * Gqlm * ( 2 * Y12m * pi * rhobar - sqrtof6 * Y02m * ( rho*rho ) )
+        #     )
+        # hnm=np.sum(( 2 * Y12m * rho * ( ThornGqlm + Gqlm * ( rhobar + rho ) ) + ThornGqlm * Y22m * ( pi - taubar ) )
+        #     )
+        # hmm=np.sum(0 - Y22m * ( ThornThornGqlm + 2 * ThornGqlm * rhobar )
+        #     )
+        hnn=np.conj(hnndag)
+        hnmb=np.conj(hnm)
+        hmbmb=np.conj(hmm)
+        # hnn=np.sum(- Gqlm * ( sqrtof6 * ( rhobar*rhobar ) * Y02m + 2*sqrtof2 * tau * rhobar * Yn12m)
+        #     )
+        # hnmb=np.sum(-0.5 * ( 2 * sqrtof2 * Gqlm * Yn12m * rhobar * ( rhobar + \
+            # rho ) + 2 * ThornGqlm * ( sqrtof2 * Yn12m * rhobar + Yn22m * ( - pibar + tau ) ) )
+        #     )
+        # hmbmb=np.sum(0 - Y22m * ( ThornThornGqlm + 2 * ThornGqlm * rhobar )
+        #     )
         
+        # hnndag=np.conj(hnn)
+        # hnm=np.conj(hnmb)
+        # hmm=np.conj(hmbmb)
 
         # Each Thornp of h contains explicit m-dependence, so I initialize them to be summed by a loop.
         Thornphnndag=0
         Thornphnm=0
         Thornphmm=0
 
-        Thornhnndag=np.sum(2 * rho * ( - sqrtof6 * Y02m * rho * ( ThornzGqlm + 2 \
-        * zGqlm * rho ) + 2 * Y12m * ( ThornzGqlm + zGqlm * ( rhobar + 2 * \
-        rho ) ) * taubar ))
-        
-        Ethhnndag=np.sum(2 * zGqlm * ( 2 * rho * ( -3 * Y12m * rhobar * rho + ( 2 * \
-        Y22m * rhobar * taubar + sqrtof6 * Y02m * ( rhobar + rho ) * taubar ) \
-        ) + Y12m * ( 3 * PsiCDe2 * rhobar + ( PsiCDe2bar * rho + ( 2 * mu * \
-        rhobar * ( rho - rhobar ) -2 * ( 2 * rhobar + rho ) * ( \
-        taubar*taubar ) ) ) ) ))
-        Ethphnndag=np.sum(4 * zGqlm * rho * ( 3 * Yn12m * ( rho*rho ) + taubar * ( \
-        - sqrtof6 * Y02m * rho + Y12m * taubar ) ))
-        Thornhnm=np.sum(( 2 * Y12m * rho * ( ThornThornzGqlm + ( ThornzGqlm * ( \
-        rhobar + 2 * rho ) + zGqlm * ( ( rhobar*rhobar ) + rho * ( rhobar + 2 \
-        * rho ) ) ) ) + Y22m * ( ThornThornzGqlm * ( pi - taubar ) + \
-        ThornzGqlm * ( 2 * pi * rho - ( rhobar + rho ) * taubar ) ) ))
-        
-        Ethhnm=np.sum(( 4 * Y22m * rhobar * rho * ( ThornzGqlm + zGqlm * ( rhobar + \
-        rho ) ) + ( -2 * Y12m * ( ThornzGqlm * ( 2 * rhobar + rho ) + zGqlm * \
-        ( rhobar + rho ) * ( rhobar + 2 * rho ) ) * taubar + 0.5 * ThornzGqlm \
-        * Y22m /rhobar /rho * ( 2 * mu * rhobar * ( ( \
-        rho - rhobar )*( rho - rhobar ) ) + ( PsiCDe2bar * rho * ( \
-        3 * rhobar + rho ) + ( PsiCDe2 * rhobar * ( rhobar + 3 * rho ) -2 * \
-        ( -2 * ( rhobar*rhobar ) + ( 3 * rhobar * rho + ( rho*rho ) ) ) * ( \
-        taubar*taubar ) ) ) ) ) ))
-        Ethphnm=np.sum(( 1/( rhobar ) ) * ( -2 * sqrtof6 * Y02m * rhobar * ( rho*rho \
-        ) * ( ThornzGqlm + zGqlm * ( rhobar + rho ) ) + ( -2 * Y12m * rho * ( \
-        - rhobar + 2 * rho ) * ( ThornzGqlm + zGqlm * ( rhobar + rho ) ) * \
-        taubar + ThornzGqlm * Y22m * taubar * ( -2 * pi * rho + ( - rhobar \
-        * taubar + rho * taubar ) ) ) ))
-        Thornhmm=np.sum(- Y22m * ( ThornThornThornzGqlm + 2 * rhobar * ( \
-        ThornThornzGqlm + ThornzGqlm * rhobar ) ))
-        
-        Ethhmm=np.sum(2 * Y22m * rhobar * ( ThornThornzGqlm + ThornzGqlm * rhobar ) \
-        /rho * taubar)
-        Ethphmm=np.sum(( 2 * ThornThornzGqlm /rhobar * rho * ( Y12m * \
-        rhobar + Y22m * taubar ) + 2 * ThornzGqlm * ( 2 * Y12m * rhobar * rho \
-        + Y22m * ( - rhobar + 2 * rho ) * taubar ) ))
+        Thornhnndag=np.sum(rho * ( - sqrtof6 * Y02m * rho * ( ThornGqlm + 2 * Gqlm \
+        * rho ) + 2 * sqrtof2 * Y12m * ( ThornGqlm + Gqlm * ( rhobar + 2 * \
+        rho ) ) * taubar )
+        )
 
-        # only Thornp has explicit m-dependence
-        #if q==0: 
+        Ethhnndag=np.sum(0.5 * Gqlm * ( rho * ( -6 * sqrtof2 * Y12m * rhobar * rho \
+        + ( 8 * Y22m * rhobar * taubar + 4 * sqrtof6 * Y02m * ( rhobar + rho \
+        ) * taubar ) ) + 2 * sqrtof2 * Y12m * ( 3 * PsiCDe2 * rhobar + ( \
+        PsiCDe2bar * rho + ( 2 * mu * rhobar * ( - rhobar + rho ) -2 * ( 2 * \
+        rhobar + rho ) * ( taubar*taubar ) ) ) ) )
+        )
+        Ethphnndag=np.sum(sqrtof2 * Gqlm * rho * ( 3 * Yn12m * ( rho*rho ) + 2 * \
+        taubar * ( - sqrtof3 * Y02m * rho + Y12m * taubar ) )
+        )
+        
+        Thornhnm=np.sum( sqrtof2 * Y12m * rho * ( ThornThornGqlm + ( ThornGqlm * \
+        ( rhobar + 2 * rho ) + Gqlm * ( ( rhobar*rhobar ) + ( rhobar * rho + \
+        2 * ( rho*rho ) ) ) ) ) + Y22m * ( ThornThornGqlm * ( pi - taubar ) \
+        + ThornGqlm * ( 2 * pi * rho - ( rhobar + rho ) * taubar ) ) 
+        )
+        
+        Ethhnm=np.sum( 2 * Y22m * rhobar * rho * ( ThornGqlm + Gqlm * ( rhobar + \
+        rho ) ) + ( - sqrtof2 * Y12m * ( ThornGqlm * ( 2 * rhobar + rho ) + \
+        Gqlm * ( rhobar + rho ) * ( rhobar + 2 * rho ) ) * taubar + 0.5 * \
+        ThornGqlm * Y22m * ( 1/( rhobar ) ) * ( 1/( rho ) ) * ( 2 * mu * \
+        rhobar * ( ( - rhobar + rho )*( - rhobar + rho ) ) + ( PsiCDe2bar * \
+        rho * ( 3 * rhobar + rho ) + ( PsiCDe2 * rhobar * ( rhobar + 3 * rho \
+        ) -2 * ( -2 * ( rhobar*rhobar ) + ( 3 * rhobar * rho + ( rho*rho ) ) \
+        ) * ( taubar*taubar ) ) ) ) ) 
+        )
+        Ethphnm= -1/( rhobar ) * np.sum( sqrtof6 * Y02m * rhobar * ( rho*rho ) \
+        * ( ThornGqlm + Gqlm * ( rhobar + rho ) ) + ( sqrtof2 * Y12m * rho \
+        * ( - rhobar + 2 * rho ) * ( ThornGqlm + Gqlm * ( rhobar + rho ) ) \
+        * taubar + ThornGqlm * Y22m * taubar * ( 2 * pi * rho + ( rhobar * \
+        taubar - rho * taubar ) ) ) 
+        )
+
+        Thornhmm=- np.sum(Y22m * ( ThornThornThornGqlm + 2 * rhobar * ( \
+        ThornThornGqlm + ThornGqlm * rhobar ) )
+        )
+        
+        Ethhmm=np.sum(2 * Y22m * rhobar * ( ThornThornGqlm + ThornGqlm * rhobar ) \
+        * ( 1/( rho ) ) * taubar
+        )
+        Ethphmm=np.sum( sqrtof2 * Y12m * ( ThornThornGqlm + 2 * ThornGqlm * \
+        rhobar ) * rho + 2 * Y22m * ( 1/( rhobar ) ) * ( ThornThornGqlm * \
+        rho + ThornGqlm * rhobar * ( - rhobar + 2 * rho ) ) * taubar 
+        )
+
         for m in [-2,-1,0,1,2]:
-            Thornphnndag+= ( complex( 0,-2 ) * zGqlm * a * m * rhobar * ( rho*rho ) \
-                    * ( sqrtof6 * Y02m[m+2] * rho -2 * Y12m[m+2] * taubar ) + ( 2 * sqrtof6 * \
-                    Y02m[m+2] /rhobar * rho * ( ThornzGqlm * mu * rhobar + zGqlm * \
-                    ( PsiCDe2bar * rho + ( rhobar * ( PsiCDe2 + ( 4 * mu * rhobar -2 * \
-                    ( 4 * gammabar + mu ) * rho ) ) -2 * ( rhobar + rho ) * ( \
-                    taubar*taubar ) ) ) ) + 2 * Y12m[m+2] /rho * ( -2 * ThornzGqlm \
-                    * mu * rho * taubar + zGqlm * ( PsiCDe2 * ( pibar * rhobar - rho \
-                    * taubar ) + 2 * rho * taubar * ( -4 * mu * rhobar + ( 6 * gammabar * \
-                    rho + ( mu * rho + taubar * ( pi + taubar ) ) ) ) ) ) ) )
+            Thornphnndag+=( complex( 0,-1 ) * Gqlm * a * m * rhobar * ( rho*rho ) \
+        * ( sqrtof6 * Y02m[m+2] * rho -2 * sqrtof2 * Y12m[m+2] * taubar ) + ( sqrtof2 * \
+        Y12m[m+2] * ( 1/( rho ) ) * ( -2 * ThornGqlm * mu * rho * taubar + Gqlm \
+        * ( PsiCDe2 * ( pibar * rhobar - rho * taubar ) + 2 * rho * taubar * \
+        ( -4 * mu * rhobar + ( 6 * gammabar * rho + ( mu * rho + taubar * ( \
+        pi + taubar ) ) ) ) ) ) + sqrtof6 * Y02m[m+2] * rho * ( ThornGqlm * mu + \
+        Gqlm * ( PsiCDe2 + ( 2 * ( -2 * ( gammabar + gamma ) + mu ) * rho + \
+        ( PsiCDe2bar * ( 1/( rhobar ) ) * rho + 2 * ( pi + taubar ) * tau ) ) \
+        ) ) ) )
+            Thornphnm+=( ThornGqlm * ( 4 * Y22m[m+2] * gammabar + complex( 0,1 ) * \
+        Y22m[m+2] * a * m * rhobar * rho ) * ( pi - taubar ) + ( sqrtof2 * ( \
+        complex( 0,1 ) * Y12m[m+2] * a * m * rhobar * ( rho*rho ) * ( ThornGqlm + \
+        Gqlm * ( rhobar + rho ) ) - Y12m[m+2] * ( 1/( rhobar ) ) * ( 1/( ( - \
+        rhobar + rho ) ) ) * ( Gqlm * ( rhobar * ( -3 * mu * ( \
+        rhobar*rhobar*rhobar ) + ( 2 * ( 3 * gammabar + mu ) * ( \
+        rhobar*rhobar ) * rho + ( ( rho*rho ) * ( PsiCDe2 -6 * gammabar * rho \
+        ) + rhobar * rho * ( - PsiCDe2bar + mu * rho ) ) ) ) -2 * ( - rhobar \
+        + rho ) * ( ( rhobar + rho )*( rhobar + rho ) ) * ( taubar*taubar ) ) \
+        + ( - rhobar + rho ) * ( ThornThornGqlm * mu * rhobar + ThornGqlm * \
+        ( PsiCDe2bar * rho + ( rhobar * ( PsiCDe2 + ( 3 * mu * rhobar -6 * \
+        gammabar * rho ) ) -2 * ( rhobar + rho ) * ( taubar*taubar ) ) ) ) ) \
+        ) + Y22m[m+2] * ( ThornGqlm * ( 2 * mubar * taubar - mu * ( pi + taubar ) \
+        ) + ( pi - taubar ) * ( ThornThornGqlm * ( mubar - mu ) * ( 1/( ( - \
+        rhobar + rho ) ) ) -0.5 * ThornGqlm * ( 1/( rhobar ) ) * ( 1/( rho ) \
+        ) * ( PsiCDe2 * rhobar + ( PsiCDe2bar * rho + 2 * ( rhobar + rho ) * \
+        taubar * tau ) ) ) ) ) )
+            Thornphmm+=( complex( 0,-1 ) * Y22m[m+2] * a * m * rhobar * ( \
+        ThornThornGqlm + 2 * ThornGqlm * rhobar ) * rho + Y22m[m+2] * ( 1/( \
+        rhobar ) ) * ( 1/( rho ) ) * ( ThornThornThornGqlm * mu * rhobar + ( \
+        2 * ThornGqlm * rhobar * ( PsiCDe2bar * rho + ( rhobar * ( PsiCDe2 + \
+        ( mu * rhobar -4 * gammabar * rho ) ) -2 * ( rhobar + rho ) * ( \
+        taubar*taubar ) ) ) + ThornThornGqlm * ( PsiCDe2bar * rho + ( rhobar \
+        * ( PsiCDe2 + ( 2 * mu * rhobar -4 * gammabar * rho ) ) -2 * ( rhobar \
+        + rho ) * ( taubar*taubar ) ) ) ) ) )
+            
 
-            Thornphnm+=( complex( 0,2 ) * Y12m[m+2] * a * m * rhobar * ( rho*rho ) * ( \
-                    ThornzGqlm + zGqlm * ( rhobar + rho ) ) + ( ThornThornzGqlm * Y22m[m+2] * \
-                    ( - mubar + mu ) * ( 1/( ( rhobar - rho ) ) ) * ( pi - \
-                    taubar ) + ( -2 * Y12m[m+2] /rhobar * ( 1/( ( rho - rhobar \
-                    ) ) ) * ( zGqlm * ( rhobar * ( -3 * mu * ( rhobar*rhobar*rhobar ) + ( \
-                    2 * ( 3 * gammabar + mu ) * ( rhobar*rhobar ) * rho + ( ( rho*rho ) * \
-                    ( PsiCDe2 -6 * gammabar * rho ) + rhobar * rho * ( - PsiCDe2bar \
-                    + mu * rho ) ) ) ) -2 * ( rho - rhobar ) * ( ( rhobar + rho \
-                    )*( rhobar + rho ) ) * ( taubar*taubar ) ) + ( rho - rhobar ) * \
-                    ( ThornThornzGqlm * mu * rhobar + ThornzGqlm * ( PsiCDe2bar * rho + ( \
-                    rhobar * ( PsiCDe2 + ( 3 * mu * rhobar -6 * gammabar * rho ) ) -2 \
-                    * ( rhobar + rho ) * ( taubar*taubar ) ) ) ) ) + 0.5 * ThornzGqlm * ( \
-                    1/( rhobar ) ) /rho * ( complex( 0,2 ) * Y22m[m+2] * a * m * \
-                    rhobar * ( rho*rho ) * ( rho - rhobar ) * taubar + Y22m[m+2] * ( \
-                    taubar * ( PsiCDe2bar * rho + ( 2 * ( rho - rhobar ) * ( 4 * \
-                    gammabar * rho - mu * ( 2 * rhobar + rho ) ) + ( 2 * pi * rho * \
-                    taubar -2 * rhobar * ( taubar*taubar ) ) ) ) + PsiCDe2 * ( - rho \
-                    * taubar + rhobar * ( pibar + taubar ) ) ) ) ) ) )
 
-            Thornphmm+= ( complex( 0,-1 ) * Y22m[m+2] * a * m * rhobar * ( \
-                    ThornThornzGqlm + 2 * ThornzGqlm * rhobar ) * rho + Y22m[m+2] * ( 1/( \
-                    rhobar ) ) /rho * ( ThornThornThornzGqlm * mu * rhobar + ( \
-                    2 * ThornzGqlm * rhobar * ( PsiCDe2bar * rho + ( rhobar * ( PsiCDe2 + \
-                    ( mu * rhobar -4 * gammabar * rho ) ) -2 * ( rhobar + rho ) * ( \
-                    taubar*taubar ) ) ) + ThornThornzGqlm * ( PsiCDe2bar * rho + ( rhobar \
-                    * ( PsiCDe2 + ( 2 * mu * rhobar -4 * gammabar * rho ) ) -2 * ( \
-                    rhobar + rho ) * ( taubar*taubar ) ) ) ) ) )
+        # Thornhnndag=np.sum(2 * rho * ( - sqrtof6 * Y02m * rho * ( ThornGqlm + 2 \
+        # * Gqlm * rho ) + 2 * Y12m * ( ThornGqlm + Gqlm * ( rhobar + 2 * \
+        # rho ) ) * taubar ))
+        
+        # Ethhnndag=np.sum(2 * Gqlm * ( 2 * rho * ( -3 * Y12m * rhobar * rho + ( 2 * \
+        # Y22m * rhobar * taubar + sqrtof6 * Y02m * ( rhobar + rho ) * taubar ) \
+        # ) + Y12m * ( 3 * PsiCDe2 * rhobar + ( PsiCDe2bar * rho + ( 2 * mu * \
+        # rhobar * ( rho - rhobar ) -2 * ( 2 * rhobar + rho ) * ( \
+        # taubar*taubar ) ) ) ) ))
+        # Ethphnndag=np.sum(4 * Gqlm * rho * ( 3 * Yn12m * ( rho*rho ) + taubar * ( \
+        # - sqrtof6 * Y02m * rho + Y12m * taubar ) ))
+        # Thornhnm=np.sum(( 2 * Y12m * rho * ( ThornThornGqlm + ( ThornGqlm * ( \
+        # rhobar + 2 * rho ) + Gqlm * ( ( rhobar*rhobar ) + rho * ( rhobar + 2 \
+        # * rho ) ) ) ) + Y22m * ( ThornThornGqlm * ( pi - taubar ) + \
+        # ThornGqlm * ( 2 * pi * rho - ( rhobar + rho ) * taubar ) ) ))
+        
+        # Ethhnm=np.sum(( 4 * Y22m * rhobar * rho * ( ThornGqlm + Gqlm * ( rhobar + \
+        # rho ) ) + ( -2 * Y12m * ( ThornGqlm * ( 2 * rhobar + rho ) + Gqlm * \
+        # ( rhobar + rho ) * ( rhobar + 2 * rho ) ) * taubar + 0.5 * ThornGqlm \
+        # * Y22m /rhobar /rho * ( 2 * mu * rhobar * ( ( \
+        # rho - rhobar )*( rho - rhobar ) ) + ( PsiCDe2bar * rho * ( \
+        # 3 * rhobar + rho ) + ( PsiCDe2 * rhobar * ( rhobar + 3 * rho ) -2 * \
+        # ( -2 * ( rhobar*rhobar ) + ( 3 * rhobar * rho + ( rho*rho ) ) ) * ( \
+        # taubar*taubar ) ) ) ) ) ))
+        # Ethphnm=np.sum(( 1/( rhobar ) ) * ( -2 * sqrtof6 * Y02m * rhobar * ( rho*rho \
+        # ) * ( ThornGqlm + Gqlm * ( rhobar + rho ) ) + ( -2 * Y12m * rho * ( \
+        # - rhobar + 2 * rho ) * ( ThornGqlm + Gqlm * ( rhobar + rho ) ) * \
+        # taubar + ThornGqlm * Y22m * taubar * ( -2 * pi * rho + ( - rhobar \
+        # * taubar + rho * taubar ) ) ) ))
+        # Thornhmm=np.sum(- Y22m * ( ThornThornThornGqlm + 2 * rhobar * ( \
+        # ThornThornGqlm + ThornGqlm * rhobar ) ))
+        
+        # Ethhmm=np.sum(2 * Y22m * rhobar * ( ThornThornGqlm + ThornGqlm * rhobar ) \
+        # /rho * taubar)
+        # Ethphmm=np.sum(( 2 * ThornThornGqlm /rhobar * rho * ( Y12m * \
+        # rhobar + Y22m * taubar ) + 2 * ThornGqlm * ( 2 * Y12m * rhobar * rho \
+        # + Y22m * ( - rhobar + 2 * rho ) * taubar ) ))
+
+        # # only Thornp has explicit m-dependence
+        # #if q==0: 
+        # for m in [-2,-1,0,1,2]:
+        #     Thornphnndag+= ( complex( 0,-2 ) * Gqlm * a * m * rhobar * ( rho*rho ) \
+        #             * ( sqrtof6 * Y02m[m+2] * rho -2 * Y12m[m+2] * taubar ) + ( 2 * sqrtof6 * \
+        #             Y02m[m+2] /rhobar * rho * ( ThornGqlm * mu * rhobar + Gqlm * \
+        #             ( PsiCDe2bar * rho + ( rhobar * ( PsiCDe2 + ( 4 * mu * rhobar -2 * \
+        #             ( 4 * gammabar + mu ) * rho ) ) -2 * ( rhobar + rho ) * ( \
+        #             taubar*taubar ) ) ) ) + 2 * Y12m[m+2] /rho * ( -2 * ThornGqlm \
+        #             * mu * rho * taubar + Gqlm * ( PsiCDe2 * ( pibar * rhobar - rho \
+        #             * taubar ) + 2 * rho * taubar * ( -4 * mu * rhobar + ( 6 * gammabar * \
+        #             rho + ( mu * rho + taubar * ( pi + taubar ) ) ) ) ) ) ) )
+
+        #     Thornphnm+=( complex( 0,2 ) * Y12m[m+2] * a * m * rhobar * ( rho*rho ) * ( \
+        #             ThornGqlm + Gqlm * ( rhobar + rho ) ) + ( ThornThornGqlm * Y22m[m+2] * \
+        #             ( - mubar + mu ) * ( 1/( ( rhobar - rho ) ) ) * ( pi - \
+        #             taubar ) + ( -2 * Y12m[m+2] /rhobar * ( 1/( ( rho - rhobar \
+        #             ) ) ) * ( Gqlm * ( rhobar * ( -3 * mu * ( rhobar*rhobar*rhobar ) + ( \
+        #             2 * ( 3 * gammabar + mu ) * ( rhobar*rhobar ) * rho + ( ( rho*rho ) * \
+        #             ( PsiCDe2 -6 * gammabar * rho ) + rhobar * rho * ( - PsiCDe2bar \
+        #             + mu * rho ) ) ) ) -2 * ( rho - rhobar ) * ( ( rhobar + rho \
+        #             )*( rhobar + rho ) ) * ( taubar*taubar ) ) + ( rho - rhobar ) * \
+        #             ( ThornThornGqlm * mu * rhobar + ThornGqlm * ( PsiCDe2bar * rho + ( \
+        #             rhobar * ( PsiCDe2 + ( 3 * mu * rhobar -6 * gammabar * rho ) ) -2 \
+        #             * ( rhobar + rho ) * ( taubar*taubar ) ) ) ) ) + 0.5 * ThornGqlm * ( \
+        #             1/( rhobar ) ) /rho * ( complex( 0,2 ) * Y22m[m+2] * a * m * \
+        #             rhobar * ( rho*rho ) * ( rho - rhobar ) * taubar + Y22m[m+2] * ( \
+        #             taubar * ( PsiCDe2bar * rho + ( 2 * ( rho - rhobar ) * ( 4 * \
+        #             gammabar * rho - mu * ( 2 * rhobar + rho ) ) + ( 2 * pi * rho * \
+        #             taubar -2 * rhobar * ( taubar*taubar ) ) ) ) + PsiCDe2 * ( - rho \
+        #             * taubar + rhobar * ( pibar + taubar ) ) ) ) ) ) )
+
+        #     Thornphmm+= ( complex( 0,-1 ) * Y22m[m+2] * a * m * rhobar * ( \
+        #             ThornThornGqlm + 2 * ThornGqlm * rhobar ) * rho + Y22m[m+2] * ( 1/( \
+        #             rhobar ) ) /rho * ( ThornThornThornGqlm * mu * rhobar + ( \
+        #             2 * ThornGqlm * rhobar * ( PsiCDe2bar * rho + ( rhobar * ( PsiCDe2 + \
+        #             ( mu * rhobar -4 * gammabar * rho ) ) -2 * ( rhobar + rho ) * ( \
+        #             taubar*taubar ) ) ) + ThornThornGqlm * ( PsiCDe2bar * rho + ( rhobar \
+        #             * ( PsiCDe2 + ( 2 * mu * rhobar -4 * gammabar * rho ) ) -2 * ( \
+        #             rhobar + rho ) * ( taubar*taubar ) ) ) ) ) )
 
         # else:
         #     #q=0 
         #     for m in [-2,-1,0,1,2]:
-        #         Thornphnndag += -2 * ( complex( 0,1 ) * zGqlm * a * m * rhobar * ( \
+        #         Thornphnndag += -2 * ( complex( 0,1 ) * Gqlm * a * m * rhobar * ( \
         #             rho*rho ) * ( sqrtof6 * Y02m[m+2] * rho -2 * Y12m[m+2] * taubar ) + ( ( 3/2 \
-        #             )**( 0.5 ) * Y02m[m+2] /rhobar * rho * ( -2 * ThornzGqlm * mu * \
-        #             rhobar + zGqlm * ( PsiCDe2bar * ( -2 + q ) * rho + ( rhobar * ( \
+        #             )**( 0.5 ) * Y02m[m+2] /rhobar * rho * ( -2 * ThornGqlm * mu * \
+        #             rhobar + Gqlm * ( PsiCDe2bar * ( -2 + q ) * rho + ( rhobar * ( \
         #             PsiCDe2 * ( -2 + q ) + ( 2 * ( -4 + q ) * mu * rhobar + ( -4 * ( -4 + \
         #             q ) * gammabar * rho + ( 4 -2 * q ) * mu * rho ) ) ) -2 * ( -2 + \
         #             q ) * ( rhobar + rho ) * ( taubar*taubar ) ) ) ) + Y12m[m+2] * ( 1/( rho ) \
-        #             ) * ( 2 * ThornzGqlm * mu * rho * taubar + zGqlm * ( PsiCDe2 * ( -1 + \
+        #             ) * ( 2 * ThornGqlm * mu * rho * taubar + Gqlm * ( PsiCDe2 * ( -1 + \
         #             q ) * ( pibar * rhobar - rho * taubar ) + rho * taubar * ( ( 8 + \
         #             -2 * q ) * mu * rhobar + ( 4 * ( -3 + q ) * gammabar * rho + ( 2 * ( \
         #             -1 + q ) * mu * rho + 2 * ( -1 + q ) * taubar * ( pi + taubar ) ) ) ) \
@@ -440,38 +547,35 @@ def TotalGamma(a,radius,theta,phi_star,z_array=None,M=1):#np.array([0,0,0,0,0]))
 
         #         Thornphnm+= ( -2 * rho * ( Y12m[m+2] * ( ( -4 + q ) * gammabar + ( -2 + q ) \
         #             * gamma ) + complex( 0,-1 ) * Y12m[m+2] * a * m * rhobar * rho ) * ( \
-        #             ThornzGqlm + zGqlm * ( rhobar + rho ) ) + ( ThornzGqlm * ( - Y22m[m+2] \
+        #             ThornGqlm + Gqlm * ( rhobar + rho ) ) + ( ThornGqlm * ( - Y22m[m+2] \
         #             * ( -4 * gammabar + q * ( gammabar + gamma ) ) + complex( 0,1 ) * \
         #             Y22m[m+2] * a * m * rhobar * rho ) * ( pi - taubar ) + ( Y12m[m+2] * ( 1/( \
         #             rhobar ) ) * ( 1/( ( rho - rhobar ) ) ) * ( ( rho - rhobar \
-        #             ) * ( -2 * ThornThornzGqlm * mu * rhobar + ThornzGqlm * ( PsiCDe2 * ( \
+        #             ) * ( -2 * ThornThornGqlm * mu * rhobar + ThornGqlm * ( PsiCDe2 * ( \
         #             -2 + q ) * rhobar + ( PsiCDe2bar * ( -2 + q ) * rho + ( -2 * mu * \
         #             rhobar * ( rhobar + 2 * rho ) -2 * ( -2 + q ) * ( rhobar + rho ) * \
-        #             ( taubar*taubar ) ) ) ) ) + zGqlm * ( PsiCDe2 * ( -2 + q ) * rhobar * \
+        #             ( taubar*taubar ) ) ) ) ) + Gqlm * ( PsiCDe2 * ( -2 + q ) * rhobar * \
         #             ( rho*rho ) + ( 2 * mu * rhobar * ( ( rhobar*rhobar*rhobar ) + ( \
         #             rhobar * ( rho*rho ) -2 * ( rho*rho*rho ) ) ) + ( -2 + q ) * ( - \
         #             PsiCDe2bar * ( rhobar*rhobar ) * rho -2 * ( rho - rhobar ) * ( \
         #             ( rhobar + rho )*( rhobar + rho ) ) * ( taubar*taubar ) ) ) ) ) + \
-        #             Y22m[m+2] * ( ThornzGqlm * ( 2 * mubar * taubar - mu * ( pi + taubar \
-        #             ) ) + ( pi - taubar ) * ( ThornThornzGqlm * ( mubar - mu ) \
-        #             * ( 1/( ( rho - rhobar ) ) ) + 0.5 * ThornzGqlm * ( -1 + q ) * ( \
+        #             Y22m[m+2] * ( ThornGqlm * ( 2 * mubar * taubar - mu * ( pi + taubar \
+        #             ) ) + ( pi - taubar ) * ( ThornThornGqlm * ( mubar - mu ) \
+        #             * ( 1/( ( rho - rhobar ) ) ) + 0.5 * ThornGqlm * ( -1 + q ) * ( \
         #             1/( rhobar ) ) /rho * ( PsiCDe2 * rhobar + ( PsiCDe2bar * \
         #             rho + 2 * ( rhobar + rho ) * taubar * tau ) ) ) ) ) ) )
 
-        #         Thornphmm+= ( - ( ThornThornzGqlm + 2 * ThornzGqlm * rhobar ) * ( -1 \
+        #         Thornphmm+= ( - ( ThornThornGqlm + 2 * ThornGqlm * rhobar ) * ( -1 \
         #             * Y22m[m+2] * ( -4 * gammabar + q * ( gammabar + gamma ) ) + complex( 0,1 \
         #             ) * Y22m[m+2] * a * m * rhobar * rho ) -0.5 * Y22m[m+2] /rhobar * \
-        #             ( 1/( rho ) ) * ( -2 * ThornThornThornzGqlm * mu * rhobar + ( \
-        #             ThornThornzGqlm * ( rhobar * ( PsiCDe2 * ( -2 + q ) -4 * mu * \
+        #             ( 1/( rho ) ) * ( -2 * ThornThornThornGqlm * mu * rhobar + ( \
+        #             ThornThornGqlm * ( rhobar * ( PsiCDe2 * ( -2 + q ) -4 * mu * \
         #             rhobar ) + ( PsiCDe2bar * ( -2 + q ) * rho -2 * ( -2 + q ) * ( \
-        #             rhobar + rho ) * ( taubar*taubar ) ) ) + 2 * ThornzGqlm * rhobar * ( \
+        #             rhobar + rho ) * ( taubar*taubar ) ) ) + 2 * ThornGqlm * rhobar * ( \
         #             rhobar * ( PsiCDe2 * ( -2 + q ) -2 * mu * rhobar ) + ( PsiCDe2bar * \
         #             ( -2 + q ) * rho -2 * ( -2 + q ) * ( rhobar + rho ) * ( \
         #             taubar*taubar ) ) ) ) ) )
 
-        hnn=np.conj(hnndag)
-        hnmb=np.conj(hnm)
-        hmbmb=np.conj(hmm)
 
         Thornhnn=np.conj(Thornhnndag)
         # Thornhnmb=np.conj(Thornhnm)
@@ -592,7 +696,7 @@ def TotalGamma(a,radius,theta,phi_star,z_array=None,M=1):#np.array([0,0,0,0,0]))
 # SinTHp=np.sin(theta_p)
 # expPHp=np.exp(1.j*phi_p)
 # z0,z1,z2=2*sqrtof6*sqrtpiover5* ( 1 - 3 * CosTHp*CosTHp ), 12*sqrtpiover5 *expPHp *CosTHp*SinTHp, -6*sqrtpiover5 /expPHp/expPHp *SinTHp*SinTHp#Cartesion (BL?)
-# z_companion= np.array([np.conj(z2),-z1,z0,z1,z2]) # Norm = 4*sqrt(6*pi/5)~7.8 for all theta and phi.
+# z_companion= np.array([np.conj(z2),-np.conj(z1),z0,z1,z2]) # Norm = 4*sqrt(6*pi/5)~7.8 for all theta and phi.
 # eps=10**(-5)
 # zs= eps*z_companion
 # for it in range(0,10000):
@@ -607,7 +711,7 @@ def TotalGamma(a,radius,theta,phi_star,z_array=None,M=1):#np.array([0,0,0,0,0]))
 #     for x in ChrTot: 
 #         for y in x: 
 #             for z in y:
-#                 if np.iscomplex(np.real_if_close(z,imtolfactor)):
+#                 if np.iscomplex(np.real_if_close(z,imtolfactor)) or abs(ChrTot[it1,it2,it3]-ChrTot[it1,it3,it2])>10**(-12):
 #                     print((it1,it2,it3),z,ChrTot[it1,it2,it3]-ChrTot[it1,it3,it2])
 #                 it3+=1
 #                 it3=it3%4
@@ -621,6 +725,6 @@ def TotalGamma(a,radius,theta,phi_star,z_array=None,M=1):#np.array([0,0,0,0,0]))
 # print("dChrKN calculated ",time.perf_counter()-start,time.perf_counter()-restart)
 
 
-# # Average time for totalG is about the same
+# # # Average time for totalG is about the same
 # print((time.perf_counter()-start)/10000)
 

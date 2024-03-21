@@ -17,18 +17,18 @@ M=1
 
 Base_Convergence_graphs=False
 Pert_Stability_graphs=True
-Pert_Convergence_graphs=True
+Pert_Convergence_graphs=False
 
 a=0.0001
-p,e,x=7.7,0,1 #These and the z's should be reported for reproducibility. Don't let x=0.
+p,e,x=10.0,0,1 #These and the z's should be reported for reproducibility. Don't let x=0.
 KerrST=Spacetime(a)
 KerrG=KerrST.GeodesicConstructor(p,e,x)
 
-tau_end,Nsteps=100000,5 # tau_end= 10000*ceil(T_orbit_for_r_min)
-times=np.linspace(0,tau_end,tau_end*10)# tau_end/floor(T_orbit_for_r_min)*20 or 10000orbits*20 or more
+tau_end,Nsteps=3*10**3,5 # tau_end= 10000*ceil(T_orbit_for_r_min)
+times=np.linspace(0,tau_end,tau_end)#*10)# tau_end/floor(T_orbit_for_r_min)*20 or 10000orbits*20 or more
 
 exps=np.arange(8,14.) #exponents for the integration tolerances
-eps_ar=[0.,10**(-12),10**(-9),10**(-6)] #,10**(-5)] 1e-5 diverges
+eps_ar=[0.,10**(-9)] #,10**(-12),10**(-6),10**(-5)] 1e-5 diverges, 1e-6 diverges for off equator perturbers
 
 if Base_Convergence_graphs:
     #Test Stability and Convergence when unperturbed 
@@ -145,12 +145,12 @@ if Base_Convergence_graphs:
 
 PertST={}
 PertG={}
-for (theta_p,phi_p) in [(np.pi/4,np.pi/4),(0,0)]:
+for (theta_p,phi_p) in [(np.pi-np.arccos(1/np.sqrt(3)),-np.pi/3)]:#,(np.pi/2,np.pi/4),(np.pi/4,0),(0,0)]:
     PertST[(theta_p,phi_p)]={}
     PertG[(theta_p,phi_p)]={}
     for i in range(len(eps_ar)):    
         PertST[(theta_p,phi_p)][eps_ar[i]]=Spacetime(a)
-        PertST[(theta_p,phi_p)][eps_ar[i]].Add_Perturbation_Source('point',theta_p,phi_p,Epsilon=eps_ar[i])
+        PertST[(theta_p,phi_p)][eps_ar[i]].Add_Perturbation_Source('point',theta_p,phi_p,Epsilon=eps_ar[i])# -10*eps_ar[i]*np.array([100*(1+0.j),0,0,0,100*(1-0.j)]))
         PertG[(theta_p,phi_p)][eps_ar[i]]=PertST[(theta_p,phi_p)][eps_ar[i]].GeodesicConstructor(p,e,x)
         # print(PertST[(theta_p,phi_p)][eps_ar[i]].NetPerturbation.z_array,PertG[(theta_p,phi_p)][eps_ar[i]].zs)
     if Pert_Stability_graphs:
@@ -202,8 +202,8 @@ for (theta_p,phi_p) in [(np.pi/4,np.pi/4),(0,0)]:
         axs_pert[2].legend()
         fig_pert_sols.set_figheight(15)
         fig_pert_sols.set_figwidth(18)
-        fig_pert_sols.suptitle(f"Point-Like Perturber ($\\theta_p,\phi_p$)={theta_p,phi_p}\n tol=1e-12 a,p,e,x={a,p,e,x}") 
-        plt.savefig(f'PLpert_zp{np.cos(theta_p)}.png')
+        # fig_pert_sols.suptitle(f"Point-Like Perturber ($\\theta_p,\phi_p$)={theta_p,phi_p}\n tol=1e-12 a,p,e,x={a,p,e,x}") 
+        # plt.savefig(f'PLpert_zp{np.cos(theta_p)}_phip{phi_p}_aftercorrections.png')
         plt.show()
         # #fig_pert_sols: 8x6 pert_sol.y[j][i] vs pert_t_arrays[i]
         # fig_pert_sols, axs_pert=plt.subplots(1,3)
@@ -226,32 +226,32 @@ for (theta_p,phi_p) in [(np.pi/4,np.pi/4),(0,0)]:
         # plt.savefig(f'PLpert_zp{np.cos(theta_p)}minusBase.png')
         # plt.show()
 
-        #fig_t_div plot of t_div vs tol_exp
-        fig_t_div, ax_t_div=plt.subplots()
-        fig_t_div.suptitle('Proper Time to Divergence')
-        ax_t_div.stem(eps_ar,t_div,use_line_collection=True)
-        ax_t_div.set_xlabel('$\epsilon$')
-        ax_t_div.set_ylabel('proper time')
-        # fig_t_div.set_figheight(10)
-        # fig_t_div.set_figwidth(14)
-        plt.savefig(f'PLpert_zp{np.cos(theta_p)}DivergenceTimes.png')
-        plt.show()
+        # #fig_t_div plot of t_div vs tol_exp
+        # fig_t_div, ax_t_div=plt.subplots()
+        # fig_t_div.suptitle('Proper Time to Divergence')
+        # ax_t_div.stem(eps_ar,t_div,use_line_collection=True)
+        # ax_t_div.set_xlabel('$\epsilon$')
+        # ax_t_div.set_ylabel('proper time')
+        # # fig_t_div.set_figheight(10)
+        # # fig_t_div.set_figwidth(14)
+        # plt.savefig(f'PLpert_zp{np.cos(theta_p)}DivergenceTimes.png')
+        # plt.show()
 
-        #fig_pert_div: 8 subplots y_div vs t_div scatter plot labeled by exp
-        fig_y_div, axs_y_div=plt.subplots(1,2)
-        # sizes=10*
-        cbrdiv=axs_y_div[0].scatter(t_div,[val[1] for val in y_div],c=eps_ar,label='r')
-        # axs_y_div[0].scatter(t_div,[val[5] for val in y_div],marker='d',c=exps,label='dr/d$\\tau$')
-        axs_y_div[0].set_xlabel('time of divergence')
-        axs_y_div[0].legend()
-        fig_y_div.colorbar(cbrdiv,ax=axs_y_div[0],extend='both')
-        cbthdiv=axs_y_div[1].scatter(t_div,[val[2] for val in y_div],c=eps_ar,label='$\\theta$')
-        # axs_y_div[1].scatter(t_div,[val[6] for val in y_div],marker='d',s=sizes,c=exps,label='d$\\theta$/d$\\tau$')
-        axs_y_div[1].set_xlabel('time of divergence')
-        axs_y_div[1].legend()
-        fig_y_div.colorbar(cbthdiv,ax=axs_y_div[1],extend='both')
-        plt.savefig(f'PLpert_zp{np.cos(theta_p)}ValuesAtDivergence.png')
-        plt.show()
+        # #fig_pert_div: 8 subplots y_div vs t_div scatter plot labeled by exp
+        # fig_y_div, axs_y_div=plt.subplots(1,2)
+        # # sizes=10*
+        # cbrdiv=axs_y_div[0].scatter(t_div,[val[1] for val in y_div],c=eps_ar,label='r')
+        # # axs_y_div[0].scatter(t_div,[val[5] for val in y_div],marker='d',c=exps,label='dr/d$\\tau$')
+        # axs_y_div[0].set_xlabel('time of divergence')
+        # axs_y_div[0].legend()
+        # fig_y_div.colorbar(cbrdiv,ax=axs_y_div[0],extend='both')
+        # cbthdiv=axs_y_div[1].scatter(t_div,[val[2] for val in y_div],c=eps_ar,label='$\\theta$')
+        # # axs_y_div[1].scatter(t_div,[val[6] for val in y_div],marker='d',s=sizes,c=exps,label='d$\\theta$/d$\\tau$')
+        # axs_y_div[1].set_xlabel('time of divergence')
+        # axs_y_div[1].legend()
+        # fig_y_div.colorbar(cbthdiv,ax=axs_y_div[1],extend='both')
+        # plt.savefig(f'PLpert_zp{np.cos(theta_p)}ValuesAtDivergence.png')
+        # plt.show()
 
         # 
         # eps=10**(-5) #eps_ar[3]
