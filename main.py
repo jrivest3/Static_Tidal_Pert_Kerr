@@ -10,7 +10,7 @@ from DataHandler import *
 
 
 # Should each remote call have it's own main loop, or should the main loop contain all the remote calls?
-# I want the DataHandler to store or take dictionaires and create arrays and calculations for results and plots
+# I want the DataHandler to store or take dictionaries and create arrays and calculations for results and plots
 # nested for loops can make a dictionary with a long tuple as a key value, or it could make a nested directory
 # I could also create a function or super dictionary that returns desired key values and then creates an entry for that key value if it doesn't already exist
 # the simplest thing may be something like a pandas pivot table
@@ -26,7 +26,7 @@ def rev_ls_dec(ls_func):
         print("in decor")
         ret_val=ls_func(*args)
         ret_val.reverse()
-        print(ret_val)
+        print('back in decor',ret_val)
         return ret_val
     return reverser
 
@@ -41,6 +41,7 @@ a1list.reverse()
 @rev_ls_dec
 def revlister(arr:np.ndarray)->list:
     ls=[]
+    print('in func')
     for el in arr:
         ls.append(el)
     return ls

@@ -51,6 +51,7 @@ class Perturber:
     def add(self,a,b):
         new_zs=a.z_array+b.z_array if a.z_array is not None else b.z_array
         new_Eij=a.Eij+b.Eij if a.Eij is not None and b.Eij is not None else None
+        assert new_zs is not None
         return Perturber(zs=new_zs,Eij=new_Eij,name='Net Perturbation',Model='Net Perturbation')
     
 
@@ -250,8 +251,11 @@ class Spacetime:
         #try:
         if NewSource==0:print(f"{Model_Or_zs_Or_Eij} is not a valid argument. Try 'point','ring', np.array(5,dtype=np.complex128), or np.array((3,3)).")
         else:
-            if self.NetPerturbation.name=='Flat Background': self.NetPerturbation.set_name(NewSource.name)
+            checkname=self.NetPerturbation.name
             self.NetPerturbation=self.NetPerturbation.add(self.NetPerturbation,NewSource) #Memory leak issue?
+            if checkname=='Flat Background': self.NetPerturbation.set_name(NewSource.name)
+            #self.Perturbers['NetPerturbation'] deletion is not necessary in Python, only overwriting the reference
+            self.Perturbers['NetPerturbation']=self.NetPerturbation
         #except:print(f"{Model_Or_zs_Or_Eij} is not a valid argument. Try 'point','ring', np.array(5,dtype=np.complex128), or np.array((3,3)).")
     
     def Clear_Pertubations(self):

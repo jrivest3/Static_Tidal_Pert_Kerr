@@ -1,9 +1,13 @@
 #DataHandler
+from numpy import arctan
+from CristhValuesArrays import Gamma,dGamma
 from SpacetimeController import *
 import pandas as pd
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import axes3d, Axes3D
 
 import time
+
 start=time.perf_counter()
 restart=start
 M=1
@@ -14,24 +18,123 @@ M=1
 #     def SpacetimeConstructor(self,a):# *args,**kwargs):
 #         if tuple([a,z1,z2,z3,z4,z5]) not in self.Spacetimes:
 #             NewST=Spacetime(a)
+a=.5
+p,e,x=10.0,0.1,.8 #These and the z's should be reported for reproducibility. Don't let x=0.
 
+#### def Plot r vs tau, theta vs tau and phi vs tau ####
 Base_Convergence_graphs=False
 Pert_Stability_graphs=True
 Pert_Convergence_graphs=False
 
-a=0.0001
-p,e,x=10.0,0,1 #These and the z's should be reported for reproducibility. Don't let x=0.
-KerrST=Spacetime(a)
-KerrG=KerrST.GeodesicConstructor(p,e,x)
+### def Plot_Acceleration_Fields
+Plot_Acceleration_Fields=False
+if Plot_Acceleration_Fields:
+    PertST={}
+    PertST_dGamma_Fields={}
+    # PertST_Accel_Fields={}
 
-tau_end,Nsteps=3*10**3,5 # tau_end= 10000*ceil(T_orbit_for_r_min)
+    eps=10**(-6)
+    # theta_p,phi_p=np.pi/2,0
+    # PertST[(theta_p,phi_p)]={}
+    for (theta_p,phi_p) in [(np.pi/4,0)]:# (np.pi/2,0),(np.pi/2,np.pi/4),,(0,0),(np.pi-np.arccos(1/np.sqrt(3)),-np.pi/3)
+        PertST[(theta_p,phi_p)]={}
+        PertST[(theta_p,phi_p)][eps]=Spacetime(a)
+        PertST[(theta_p,phi_p)][eps].Add_Perturbation_Source('point',theta_p,phi_p,Epsilon=eps)
+        PertST_zs=PertST[(theta_p,phi_p)][eps].NetPerturbation.z_array # Perturbers['NetPerturbation'].z_array
+        # print(PertST[(theta_p,phi_p)][eps].Perturbers['NetPerturbation'].z_array,PertST[(theta_p,phi_p)][eps].Perturbers["PointMasses"][0].z_array,PertST_zs)
+        # Make the 3D grid
+        # These settings may need adjusting for various distributions
+        # zoom=1.5*p/(1-e) # scale the plot to fit the orbit
+        # ds=zoom/5.1 # random decimals help avoid singularities in the meshgrid
+                    # A more rigorous method should be found to avoid evaluating field
+                    # points at the exact location of any Body. 
+        
+        view_rad,step_rad,step_th,step_phi=16,1.85,np.pi/10,np.pi/12
+        rads,thetas,phis=np.meshgrid(np.arange(M+np.sqrt(M*M-a*a)+step_rad, view_rad, step_rad), 
+                                    np.arange(step_th, np.pi-.01, step_th),
+                                    np.arange(0, 2*np.pi-step_phi, step_phi))
+        
+        sqrsqasq=np.sqrt(rads*rads+a*a)
+        sqSigmas=np.sqrt(rads*rads+a*a*np.cos(thetas)**2)
+
+        X,Y,Z=sqrsqasq*np.sin(thetas)*np.cos(phis),sqrsqasq*np.sin(thetas)*np.sin(phis),rads*np.cos(thetas) # replace phis -> phis-np.arctan(a/rads) ?
+        # x, y, z = np.meshgrid(np.arange(-zoom, zoom, ds), # x is overloaded
+        #                     np.arange(-zoom, zoom, ds),
+        #                     np.arange(-zoom, zoom, ds))
+            
+        # rad_x,th_x,ph_x= np.sqrt(x*x+y*y+z*z), np.arctan(np.sqrt(x*x+y*y)/z), np.arctan(y/x)
+
+        def unique_dGamma(r,t,p): return -dGamma(M,a,r,t,p,PertST_zs)#.real
+        vectorized_dGamma=np.vectorize(unique_dGamma,cache=True,signature='(),(),()->(d,d,d)')#,excluded=[0,1,5]
+        PertST_dGamma_Fields[tuple(PertST_zs)]=vectorized_dGamma(rads,thetas,phis)
+
+        # def acceleration(r,t,p):
+        #     u=np.array([-1,0,0,1]) # purely azimuthal initial velocity assumed to be constant everywhere
+        #     return -1*np.einsum('ijk,j,k->i',dGamma(M,a,r,t,p,PertST_zs).real,u,u)
+        # v_accel=np.vectorize(acceleration,cache=True,signature='(),(),()->(a)')
+        # PertST_Accel_Fields[tuple(PertST_zs)]=v_accel(rads,thetas,phis)
+
+        # Generate 3D plots
+        # plt.close('all')
+
+
+        threeDfigs={}
+        threeDaxs={}
+        for i in range(0,4):
+            for j in range(i,4):
+                threeDfigs[(i,j)] = plt.figure()
+                threeDaxs[(i,j)] = Axes3D(threeDfigs[(i,j)]) #fig.gca(projection='3d')
+                
+                # T=PertST_dGamma_Fields[tuple(PertST_zs)][:,:,:,0,i,j]
+                
+                R=PertST_dGamma_Fields[tuple(PertST_zs)][:,:,:,1,i,j]#/T  
+                TH=PertST_dGamma_Fields[tuple(PertST_zs)][:,:,:,2,i,j]#/T
+                PH=PertST_dGamma_Fields[tuple(PertST_zs)][:,:,:,3,i,j]#/T
+                # # T=PertST_Accel_Fields[tuple(PertST_zs)][:,:,:,0]
+                # R=PertST_Accel_Fields[tuple(PertST_zs)][:,:,:,1]#/T
+                # TH=PertST_Accel_Fields[tuple(PertST_zs)][:,:,:,2]#/T
+                # PH=PertST_Accel_Fields[tuple(PertST_zs)][:,:,:,3]#/T
+
+                U=R*np.sin(thetas)*np.cos(phis)*rads/sqSigmas+TH*np.cos(thetas)*np.cos(phis)*sqrsqasq/sqSigmas-PH*np.sin(phis)
+                V=R*np.sin(thetas)*np.sin(phis)*rads/sqSigmas+TH*np.cos(thetas)*np.sin(phis)*sqrsqasq/sqSigmas+PH*np.cos(phis)
+                W=(R*np.cos(thetas)*sqrsqasq-TH*np.sin(thetas)*rads)/sqSigmas
+
+                mags = np.sqrt(U*U+V*V+W*W) # Used for coloring.
+                cap=.7*max(mags.flatten()) # Assign a max and min color value so that a range
+                print(i,j,cap)
+                # Lowcap=cap/10             # naturally appears.
+                # mags[mags > cap] = cap
+                # mags[mags < Lowcap] = Lowcap
+                # Appropriately colored 3d quiver plot
+                colors=np.concatenate((mags.flatten(),np.repeat(mags.flatten(),2)))
+                q=threeDaxs[(i,j)].quiver(X,Y,Z, U, V, W,length=1/(cap*1.25),lw=1,pivot='middle',cmap='PuBu')
+                q.set_array(colors)
+                threeDfigs[(i,j)].colorbar(q) #Units are currently un-specified.
+                # # Also plot the positions of the Bodies
+                # ax.scatter(np.array(genpos).transpose()[0],\
+                #             np.array(genpos).transpose()[1],\
+                #             np.array(genpos).transpose()[2],label='Stars')
+                # and plot the Center of Mass
+                # ax.scatter(com.x(),com.y(),com.z(),c='r',label='CoM')
+                threeDaxs[(i,j)].legend()
+                threeDfigs[(i,j)].suptitle(f'Accelrations Due to Total $\delta\Gamma^\mu{i,j}$ \n PointMass at ({theta_p},{phi_p}) spin a={a}')#
+                threeDfigs[(i,j)].set_figheight(15)
+                threeDfigs[(i,j)].set_figwidth(18)
+                plt.savefig(f'Pert_{theta_p}_{phi_p}_Accels_{i}_{j}_BL_spin_{a}.png')#
+                plt.show()
+
+
+tau_end,Nsteps=5*10**3,5 # tau_end= 10000*ceil(T_orbit_for_r_min)
 times=np.linspace(0,tau_end,tau_end)#*10)# tau_end/floor(T_orbit_for_r_min)*20 or 10000orbits*20 or more
 
 exps=np.arange(8,14.) #exponents for the integration tolerances
-eps_ar=[0.,10**(-9)] #,10**(-12),10**(-6),10**(-5)] 1e-5 diverges, 1e-6 diverges for off equator perturbers
+eps_ar=[0.,10**(-9),10**(-6)] #,10**(-12),10**(-5)] 1e-5 diverges, 1e-6 diverges for off equator perturbers
 
 if Base_Convergence_graphs:
     #Test Stability and Convergence when unperturbed 
+    KerrST=Spacetime(a)
+    KerrG=KerrST.GeodesicConstructor(p,e,x)
+
     del_r_max=np.zeros(6) # tracker of max variance of base orbit from r0 for when e=0, contains the max vals of del_r for each exp of tolerance
     t_delr_max=np.zeros(6) # the times for del_r_max
     del_theta_max=np.zeros(6) # tracker of max variance of base orbit from th0 for when x=+/-1, contains the max vals of del_theta for each exp of tolerance
@@ -145,7 +248,7 @@ if Base_Convergence_graphs:
 
 PertST={}
 PertG={}
-for (theta_p,phi_p) in [(np.pi-np.arccos(1/np.sqrt(3)),-np.pi/3)]:#,(np.pi/2,np.pi/4),(np.pi/4,0),(0,0)]:
+for (theta_p,phi_p) in [(np.pi/4,0)]:#,(np.pi/2,np.pi/4),(np.pi/4,0),(0,0) :[(np.pi-np.arccos(1/np.sqrt(3)),-np.pi/3)]
     PertST[(theta_p,phi_p)]={}
     PertG[(theta_p,phi_p)]={}
     for i in range(len(eps_ar)):    
@@ -153,6 +256,7 @@ for (theta_p,phi_p) in [(np.pi-np.arccos(1/np.sqrt(3)),-np.pi/3)]:#,(np.pi/2,np.
         PertST[(theta_p,phi_p)][eps_ar[i]].Add_Perturbation_Source('point',theta_p,phi_p,Epsilon=eps_ar[i])# -10*eps_ar[i]*np.array([100*(1+0.j),0,0,0,100*(1-0.j)]))
         PertG[(theta_p,phi_p)][eps_ar[i]]=PertST[(theta_p,phi_p)][eps_ar[i]].GeodesicConstructor(p,e,x)
         # print(PertST[(theta_p,phi_p)][eps_ar[i]].NetPerturbation.z_array,PertG[(theta_p,phi_p)][eps_ar[i]].zs)
+    
     if Pert_Stability_graphs:
     # Test Stability for different Perturbation strengths
         pert_t_arrays=[]
@@ -166,7 +270,7 @@ for (theta_p,phi_p) in [(np.pi-np.arccos(1/np.sqrt(3)),-np.pi/3)]:#,(np.pi/2,np.
             rtol, atol = 10.**(-12), 10.**(-12)
 
             restart=time.perf_counter()
-            pert_sol=ODE(PertST[(theta_p,phi_p)][eps_ar[i]].IntRHS(),[0,tau_end],PertG[(theta_p,phi_p)][eps_ar[i]].ICs.flatten(),rtol=rtol,atol=atol)#,t_eval=times,args=PertG[(theta_p,phi_p)][eps].zs
+            pert_sol=ODE(PertST[(theta_p,phi_p)][eps_ar[i]].IntRHS(),[0,tau_end],PertG[(theta_p,phi_p)][eps_ar[i]].ICs.flatten(),t_eval=times,rtol=rtol,atol=atol)#,args=PertG[(theta_p,phi_p)][eps].zs
             print(f"Perturbed with eps={eps_ar[i]}: time to integrate to {tau_end}: {time.perf_counter()-restart}")
             PertG[(theta_p,phi_p)][eps_ar[i]].Trajectory=pert_sol
             pert_t_arrays.append(pert_sol.t)
@@ -182,14 +286,14 @@ for (theta_p,phi_p) in [(np.pi-np.arccos(1/np.sqrt(3)),-np.pi/3)]:#,(np.pi/2,np.
             else:
                 t_div[i]=np.nan
                 y_div[i]=[np.nan for _ in pert_sol.y]
-        print((start-time.perf_counter())/60,"min")
+        print(-(start-time.perf_counter())/60,"min")
         #fig_pert_sols: 8x6 pert_sol.y[j][i] vs pert_t_arrays[i]
         fig_pert_sols, axs_pert=plt.subplots(3,1)
         # for c in range(4): # columns (not t),r,th,ph
-        for i in range(len(eps_ar)):
-            axs_pert[0].plot(pert_t_arrays[i],pert_r_arrays[i],label=f"$\epsilon$={eps_ar[i]}")
-            axs_pert[1].plot(pert_t_arrays[i],pert_theta_arrays[i],label=f"$\epsilon$={eps_ar[i]}")
-            axs_pert[2].plot(pert_t_arrays[i],pert_phi_arrays[i],label=f"$\epsilon$={eps_ar[i]}")
+        for i in range(1,len(eps_ar)):
+            axs_pert[0].plot(pert_t_arrays[i],pert_r_arrays[i]-pert_r_arrays[0],label=f"$\epsilon$={eps_ar[i]}")
+            axs_pert[1].plot(pert_t_arrays[i],pert_theta_arrays[i]-pert_theta_arrays[0],label=f"$\epsilon$={eps_ar[i]}")
+            axs_pert[2].plot(pert_t_arrays[i],pert_phi_arrays[i]-pert_phi_arrays[0],label=f"$\epsilon$={eps_ar[i]}")
                 # axs_pert[1,c].plot(pert_t_arrays[exp],del_r_arrays[exp],label="1e-%f" % exps[exp])# row for velocity
         axs_pert[0].set_xlabel('proper time')
         axs_pert[0].set_ylabel('radius')
@@ -202,8 +306,8 @@ for (theta_p,phi_p) in [(np.pi-np.arccos(1/np.sqrt(3)),-np.pi/3)]:#,(np.pi/2,np.
         axs_pert[2].legend()
         fig_pert_sols.set_figheight(15)
         fig_pert_sols.set_figwidth(18)
-        # fig_pert_sols.suptitle(f"Point-Like Perturber ($\\theta_p,\phi_p$)={theta_p,phi_p}\n tol=1e-12 a,p,e,x={a,p,e,x}") 
-        # plt.savefig(f'PLpert_zp{np.cos(theta_p)}_phip{phi_p}_aftercorrections.png')
+        fig_pert_sols.suptitle(f"Point-Like Perturber ($\\theta_p,\phi_p$)={theta_p,phi_p}\n tol=1e-12 a,p,e,x={a,p,e,x}\n$\delta$ from unperturbed") 
+        plt.savefig(f'PLpert_zp{np.cos(theta_p)}_phip{phi_p}_e{e}_x{x}_deltas_BL.png') #_long
         plt.show()
         # #fig_pert_sols: 8x6 pert_sol.y[j][i] vs pert_t_arrays[i]
         # fig_pert_sols, axs_pert=plt.subplots(1,3)
@@ -303,7 +407,7 @@ for (theta_p,phi_p) in [(np.pi-np.arccos(1/np.sqrt(3)),-np.pi/3)]:#,(np.pi/2,np.
         fig_pert_sols.set_figheight(15)
         fig_pert_sols.set_figwidth(18)
         fig_pert_sols.suptitle(f"Point-Like Perturber ($\\theta_p,\phi_p$)={theta_p,phi_p}\n $\epsilon$={eps} a,p,e,x={a,p,e,x}") 
-        plt.savefig(f'PLpert_zp{np.cos(theta_p)}_Convergence_for_eps{eps}.png')
+        plt.savefig(f'PLpert_zp{np.cos(theta_p)}_Convergence_for_eps{eps}_BL.png')
         plt.show()
             # #fig_pert_sols: 8x6 pert_sol.y[j][i] vs pert_t_arrays[i]
             # fig_pert_sols, axs_pert=plt.subplots(1,3)
@@ -345,7 +449,7 @@ for (theta_p,phi_p) in [(np.pi-np.arccos(1/np.sqrt(3)),-np.pi/3)]:#,(np.pi/2,np.
         fig_pert_sols.set_figheight(15)
         fig_pert_sols.set_figwidth(18)
         fig_pert_sols.suptitle(f"Point-Like Perturber ($\\theta_p,\phi_p$)={theta_p,phi_p}\n  $\Delta$(tol=1e-13) $\epsilon$={eps} a,p,e,x={a,p,e,x}") 
-        plt.savefig(f'PL_del13_zp{np.cos(theta_p)}_Convergence_for_eps{eps}.png')
+        plt.savefig(f'PL_del13_zp{np.cos(theta_p)}_Convergence_for_eps{eps}_BL.png')
         plt.show()
 
 print((start-time.perf_counter())/60,"min")
