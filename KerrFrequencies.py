@@ -5,7 +5,7 @@ from KerrB import *
 from mpmath import ellipk,ellipe,ellippi
 
 def Frequencies(a, p, e, x, En=0, Lz=0, Q=0, r1=0, r2=0, r3=0, r4=0, zm=0, zp=0, M=1):
-
+    '''Returns [float,float,float] a list of three frequencies of motion: radial, polar, azimuthal'''
     if Q==0:
         En, Lz, Q = KerrGeoConstantsOfMotion(a, p, e, x)
     if r4==0:
