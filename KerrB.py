@@ -1,6 +1,8 @@
 #KerrB.py
 # from math import np.sqrt
 import numpy as np
+# from scipy.optimize import bisect
+import scipy.optimize as opt
 # for Schwarzhild conditions
 def schwarzEnergy(a,p,e,x):
     if(e==0):return (-2 + p)/np.sqrt((-3 + p)* p)# circular orbit
@@ -264,77 +266,64 @@ def KerrGeoPolarRoots(a, p, e, x):
 ## Work on this if we need the Separatrix ##
 
 # # (*Photon Sphere, Needed for IBSO*)
-# def KerrGeoPhotonSphereRadius(a, x0):#  Abs[x0] <= 1] /  Precision[:a1, x0] != \[Infinity] :=
+# def KerrGeoPhotonSphereRadius(a, x0,M=1):#  Abs[x0] <= 1] /  Precision[:a1, x0] != \[Infinity] :=
 #   # Approximately Schwarzschild
 #     if (a<=0.001) :
 #         #  console.log('a==0')
 #         return 3
     
 #     # (*Radius of photon sphere for equatorial orbits from Bardeen,Press,Teukolsky ApJ,178,p347 (1972),Eq.2.18*)
-#     if ((x0*x0)>=.98) :# Abs(x0)>~.99
+#     if ((x0*x0)>=.99) :# Abs(x0)>~.99
 #         #  console.log('(x0*x0)>.98')
-#         return 2*(1 + np.cos(2/3 *np.acos(-x0*a)))
+#         return 2*(1 + np.cos(2/3 *np.arccos(-x0*a)))
     
 
 #     # (*For polar orbits the radius was given by E.Teo,General Relativity and Gravitation,v.35,Issue 11,p.1909-1926 (2003),Eq.(14)*)
 #     if ((x0*x0) < 0.001) :# Abs(x0)<~0.0316
 #         #  console.log('(x0*x0)<.01')
-#         return 1+2*np.sqrt(1 - a*a /3)*np.cos(1/3 *np.acos((1 - a*a)/(1 - 1/3 *a*a)**(3/2)))
+#         return 1+2*np.sqrt(1 - a*a /3)*np.cos(1/3 *np.arccos((1 - a*a)/(1 - 1/3 *a*a)**(3/2)))
     
-
+#     # This case will not be allowed.
 #     if(a==1):
 #         if(x0<(np.sqrt(3)-1)):
 #             return 1+np.sqrt(2*(1-x0))-x0
 #         else :
 #             return 1
         
-#     # This case will not be allowed.
-
 #     # General Case
-#       # M = 1# redundant
-#       #  prec = Precision[:a1, x0]
-#       # sign = x0/np.abs(x0)
-#     #  console.log('Going to call KGPSR(' + a + ',' + sign + ')')
 #     req = KerrGeoPhotonSphereRadius(a, np.sign(x0))
-#     #  console.log('Going to call KGPSR(' + a + ',' + 0 + ')')
 #     rpolar = KerrGeoPhotonSphereRadius(a, 0)
     
 #     def Phi(r,a):return -(r*r*r - 3 *M *r*r + a*a *r + a*a *M)/(a *(r - M))
-#     def Q(r,a) :return -(r*r*r *(r*r*r - 6 *M *r*r + 9 *M*M *r - 4 *a*a *M))
-#         /(a*a *(r - M)*(r - M))
-#     def u0Sq(r,a) :return(
-#         (a*a - Q(r,a) - Phi(r,a)**2)
-#             + np.sqrt(
-#                 (a*a - Q(r,a) - Phi(r,a)**2)**2 + 4 *a*a *Q(r,a)
-#             )
-#     )
-#                         /(2 *a*a)
+#     def Q(r,a) :return -(r*r*r *(r*r*r - 6 *M *r*r + 9 *M*M *r - 4 *a*a *M))/(a*a *(r - M)*(r - M))
+#     def u0Sq(r,a) :return((a*a - Q(r,a) - Phi(r,a)**2)+ np.sqrt((a*a - Q(r,a) - Phi(r,a)**2)**2 + 4 *a*a *Q(r,a)))/(2 *a*a)
 #     def f(r):return 1-u0Sq(r,a)-(x0*x0)
-#     # let ans=bisection(f,np.min(req,rpolar),np.max(req,rpolar))
-#     # if(ans==0):let too=newtonraphson(f,np.min(req,rpolar),np.max(req,rpolar),(req + rpolar)/2)
+#     # let ans=bisec(f,np.min(req,rpolar),np.max(req,rpolar))
+#     # if(ans==0):let too=my_newton(f,np.min(req,rpolar),np.max(req,rpolar),(req + rpolar)/2)
 #     # return too
 #     # console.log("bisection "+ans)
 #     # return ans
-#     return newtonraphson(f,np.min(req,rpolar),np.max(req,rpolar),(req + rpolar)/2)
+#     return my_newton(f,np.min(req,rpolar),np.max(req,rpolar),(req + rpolar)/2)
 
 
 
 # # Innermost Bound Spherical Orbits
 # def KerrGeoIBSO(a, x0, E=None ):#  / Abs[x1] <= 1] / # Precision[:a1, x1] != \[Infinity] :=
-#     if(a==0):return 4# Approximately Schwarzschild
+#     if(a<0.001):return 4# Approximately Schwarzschild
 #     if((x0*x0)==1):return 2-x0*a+2*np.sqrt(1-x0*a)# (*Equatorial IBSO results from Bardeen,Press,Teukolsky 1972*)
-#     if(x0==0):if(a==1)# case will not be allowed
-#               :return (3 + (54 - 6*np.sqrt(33))**(1/3) + (6* (9 + np.sqrt(33)))**(1/3))/3
-#               let delt=26*a*a*a*a-8*a**6+3*np.sqrt(3*(27*a**8-16*a**10))
-#               return 1 +
-#               np.sqrt(12 - 4* a*a -
-#                         (6* np.sqrt(6)* (-2 + a*a))
-#                         /np.sqrt(6 - 2* a*a + 4* a*a*a*a/delt**(1/3) + delt**(1/3))
-#                         - 4* a*a*a*a/delt**(1/3) - delt**(1/3)
-#                        )/np.sqrt(6)
-#               + np.sqrt(6 - 2* a*a + 4* a*a*a*a/delt**(1/3) + delt**(1/3))
+#     if(x0==0): # Polar case
+#         if(a==1):# case will not be allowed
+#             return (3 + (54 - 6*np.sqrt(33))**(1/3) + (6* (9 + np.sqrt(33)))**(1/3))/3
+#         delt=26*a*a*a*a-8*a**6+3*np.sqrt(3*(27*a**8-16*a**10))
+#         return 1 +\
+#               np.sqrt(12 - 4* a*a -\
+#                         (6* np.sqrt(6)* (-2 + a*a))\
+#                         /np.sqrt(6 - 2* a*a + 4* a*a*a*a/delt**(1/3) + delt**(1/3))\
+#                         - 4* a*a*a*a/delt**(1/3) - delt**(1/3)\
+#                        )/np.sqrt(6)\
+#               + np.sqrt(6 - 2* a*a + 4* a*a*a*a/delt**(1/3) + delt**(1/3))\
 #               /np.sqrt(6)
-#              # Polar case
+            
 
 #     # prec = Precision[:a1, x]
 
@@ -344,10 +333,10 @@ def KerrGeoPolarRoots(a, p, e, x):
 #     let n=0
 #     while(E0(rph + 10**(-n)) < 1): n++
 #     # let f=ru=>E0(ru)-1
-#     let ans=bisection(def(ru):return E0(ru)-1,rph+10**(-n),10)
+#     let ans=bisec(def(ru):return E0(ru)-1,rph+10**(-n),10)
 #     return ans
 #     # console.log("bisection "+ans)
-#     # return newtonraphson(f, rph + 10**(-n), 10, rph+2,15)
+#     # return my_newton(f, rph + 10**(-n), 10, rph+2,15)
 
 
 # def KerrGeoSeparatrix(a, e1, x):#  / Abs[x1] <= 1] /
@@ -361,12 +350,12 @@ def KerrGeoPolarRoots(a, p, e, x):
 #     if(e1>0.99):return 2*KerrGeoIBSO(a, x)
 #     if((x*x)==1):
 #         def f(ru,a,e1,x):
-#             return e1-
-#             (0-ru*ru + 6* ru - 8* x*a* np.sqrt(ru) + 3* a*a)
+#             return e1-\
+#             (0-ru*ru + 6* ru - 8* x*a* np.sqrt(ru) + 3* a*a)\
 #                 /(ru*ru - 2* ru + a*a)
         
 #         let ribco=2-x*a+2*np.sqrt(1-x*a)# radius of inner-most bound circular orbit. From Levin and Perez-Giz arXiv:0811.3814
-#         let rup=bisection(def(ru):return f(ru,a,e1,x),ribco,10)
+#         let rup=bisec(def(ru):return f(ru,a,e1,x),ribco,10)
 #         #  console.log(f(ribco)+" "+rup)
 #         return (4* rup* (np.sqrt(rup) - a)**2)/(rup*p - 2* rup + a*a)
     
@@ -389,7 +378,7 @@ def KerrGeoPolarRoots(a, p, e, x):
 #     E =r=>C0(r).En
 #     r1 = KerrGeoIBSO(a, x, E)
 #     let sol=ru=>e2(ru)-e1
-#     ru0 = bisection(sol,r1,10)# newtonraphson(sol, r1, 10, (r1 + 10)/2, 20, undefined, restrain=true)
+#     ru0 = bisec(sol,r1,10)# my_newton(sol, r1, 10, (r1 + 10)/2, 20, undefined, restrain=true)
 #     #  console.log(ru0)
 #     #  console.log((2 *ra2(ru0) *ru0)/(ra2(ru0) + ru0 *Beta2(ru0)))
 #     return (2 *ra2(ru0) *ru0)/(ra2(ru0) + ru0 *Beta2(ru0))

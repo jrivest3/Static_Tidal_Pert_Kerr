@@ -65,8 +65,10 @@ import sys
 opts = [opt for opt in sys.argv[1:] if opt.startswith("-")]
 args = [arg for arg in sys.argv[1:] if not arg.startswith("-")]
 
+# args[0] could be tau_end or Nsteps, or args[4] since the vector graphs dont require it
 # options: one source, n-sources
 #OR I could have one function to calculate z's then pipe that output to the input
+# maybe args should each be arg_name=value
 
 start=time.perf_counter()
 restart=start
@@ -78,16 +80,17 @@ M=1
 #     def SpacetimeConstructor(self,a):# *args,**kwargs):
 #         if tuple([a,z1,z2,z3,z4,z5]) not in self.Spacetimes:
 #             NewST=Spacetime(a)
-a=.001
-p,e,x=10.0,0,1 #These and the z's should be reported for reproducibility. Don't let x=0.
+a= float(args[0]) if len(args) else .001
+[p,e,x]=[float(x) for x in args[1:4]] if len(args) else [10.0,0,1] #These and the z's should be reported for reproducibility. Don't let x=0.
+# Not currently validating input
 
 #### def Plot r vs tau, theta vs tau and phi vs tau ####
-Base_Convergence_graphs=True
-Pert_Stability_graphs=True
-Pert_Convergence_graphs=False
+Base_Convergence_graphs=True if ('-unpert' in opts) or ('-u' in opts) else False
+Pert_Stability_graphs=True if ('-stab' in opts) or ('-s' in opts) else False
+Pert_Convergence_graphs=True if ('-conv' in opts) or ('-c' in opts) else False
 
 ### def Plot_Acceleration_Fields
-Plot_Acceleration_Fields=False
+Plot_Acceleration_Fields=True if ('-vector' in opts) or ('-v' in opts) else False
 if Plot_Acceleration_Fields:
     PertST={}
     PertST_dGamma_Fields={}
@@ -96,7 +99,7 @@ if Plot_Acceleration_Fields:
     eps=10**(-6)
     # theta_p,phi_p=np.pi/2,0
     # PertST[(theta_p,phi_p)]={}
-    for (theta_p,phi_p) in [(np.pi/4,0)]:# (np.pi/2,0),(np.pi/2,np.pi/4),,(0,0),(np.pi-np.arccos(1/np.sqrt(3)),-np.pi/3)
+    for (theta_p,phi_p) in [(np.pi/2,0)]:# (np.pi/4,0),(np.pi/2,np.pi/4),,(0,0),(np.pi-np.arccos(1/np.sqrt(3)),-np.pi/3)
         PertST[(theta_p,phi_p)]={}
         PertST[(theta_p,phi_p)][eps]=Spacetime(a)
         PertST[(theta_p,phi_p)][eps].Add_Perturbation_Source('point',theta_p,phi_p,Epsilon=eps)
@@ -177,7 +180,7 @@ if Plot_Acceleration_Fields:
                 # and plot the Center of Mass
                 # ax.scatter(com.x(),com.y(),com.z(),c='r',label='CoM')
                 threeDaxs[(i,j)].legend()
-                threeDfigs[(i,j)].suptitle(f'Accelrations Due to Total $\delta\Gamma^\mu{i,j}$ \n PointMass at ({theta_p},{phi_p}) spin a={a}')#
+                threeDfigs[(i,j)].suptitle(f'Accelrations Due to Total $\\delta\Gamma^\mu{i,j}$ \n PointMass at ({theta_p},{phi_p}) spin a={a}')#
                 threeDfigs[(i,j)].set_figheight(15)
                 threeDfigs[(i,j)].set_figwidth(18)
                 plt.savefig(f'Pert_{theta_p}_{phi_p}_Accels_{i}_{j}_BL_spin_{a}.png')#
@@ -220,39 +223,49 @@ if Base_Convergence_graphs:
             'r':[],
             'theta':[],
             'phi':[]
-            }
+            },
+        'hplus':[],
+        'hcross':[]
     }
     # del_r_arrays=[]
     # del_theta_arrays=[]
     for i in range(exps.size):
         restart=time.perf_counter()
         rtol, atol = 10.**(-exps[i]), 10.**(-exps[i])
-        base_sol=ODE(KerrST.IntRHS(),[0,tau_end],KerrG.Trajectories[(0,0,0)].ICs.flatten(),t_eval=times,rtol=rtol,atol=atol)# Pre-set times makes it take significantly longer
+        KerrST.tau_array=times
+        base_sol=KerrST.run_Trajectory(KerrG.Trajectories[(0,0,0)])
+        #ODE(KerrST.IntRHS(),[0,tau_end],KerrG.Trajectories[(0,0,0)].ICs.flatten(),t_eval=times,rtol=rtol,atol=atol)# Pre-set times makes it take significantly longer
         print(f"Unperturbed with tol={rtol}: time to integrate {tau_end*10} steps: {time.perf_counter()-restart}")
         # base_arrays['t'].append(base_sol.t)
-        base_arrays['pos']['r'].append(base_sol.y[1])
-        base_arrays['pos']['theta'].append(base_sol.y[2])
-        base_arrays['pos']['phi'].append(base_sol.y[3])
-        # base_vt_arrays.append(base_sol.t)
-        base_arrays['vel']['r'].append(base_sol.y[5])
-        base_arrays['vel']['theta'].append(base_sol.y[6])
-        base_arrays['vel']['phi'].append(base_sol.y[7])
-        # base_at_arrays.append(base_sol.t)
-        base_arrays['acc']['r'].append(base_sol.y[9])
-        base_arrays['acc']['theta'].append(base_sol.y[10])
-        base_arrays['acc']['phi'].append(base_sol.y[11])
-        # base_jt_arrays.append(base_sol.t)
-        base_arrays['jerk']['r'].append(base_sol.y[13])
-        base_arrays['jerk']['theta'].append(base_sol.y[14])
-        base_arrays['jerk']['phi'].append(base_sol.y[15])
+        base_arrays['pos']['r'].append(base_sol[0,1])
+        base_arrays['pos']['theta'].append(base_sol[0,2])
+        base_arrays['pos']['phi'].append(base_sol[0,3])
+        # base_vt_arrays.append()
+        base_arrays['vel']['r'].append(base_sol[1,1])
+        base_arrays['vel']['theta'].append(base_sol[1,2])
+        base_arrays['vel']['phi'].append(base_sol[1,3])
+        # base_at_arrays.append()
+        base_arrays['acc']['r'].append(base_sol[2,1])
+        base_arrays['acc']['theta'].append(base_sol[2,2])
+        base_arrays['acc']['phi'].append(base_sol[2,3])
+        # base_jt_arrays.append()
+        base_arrays['jerk']['r'].append(base_sol[3,1])
+        base_arrays['jerk']['theta'].append(base_sol[3,2])
+        base_arrays['jerk']['phi'].append(base_sol[3,3])
+
+        # base_kinematics=np.reshape(np.transpose(base_sol),(len(base_sol.t),4,4))
+        base_hplusList, base_hcrossList=KerrST.calc_Strain(KerrG.Trajectories[(0,0,0)])# kluge_h(base_sol)
+        base_arrays['hplus'].append(np.array(base_hplusList))
+        base_arrays['hcross'].append(np.array(base_hcrossList))
+
         # t_array_len= base_sol.t.size
         # print("tau_end=",base_sol.t[-1],"base_sol runtime=",time.perf_counter()-start,"sol.t length=",base_sol.t.shape)
-        # print("base size=",base_sol.y.shape,base_sol.nfev)
+        # print("base size=",base_sol.shape,base_sol.nfev)
         # if e==0:
         #     r0=p
         #     del_r=[0.]
         #     for j in range(1,base_sol.t.size):
-        #         r=base_sol.y[1][j]
+        #         r=base_sol[0,1][j]
 
         #         if abs(del_r[-1])<abs(r-r0): 
         #             del_r_max[i]=r-r0
@@ -265,7 +278,7 @@ if Base_Convergence_graphs:
         #     th0=np.pi/2
         #     del_theta=[0.]
         #     for j in range(1,base_sol.t.size):
-        #         theta=base_sol.y[2][j]
+        #         theta=base_sol[0,2][j]
                 
         #         if abs(del_theta[-1])<abs(theta-th0): 
         #             del_theta_max[i]=theta-th0
@@ -275,7 +288,7 @@ if Base_Convergence_graphs:
         #     del_theta_arrays.append(del_theta)
         # # print("Del_r=",del_r)
     for var in ['pos','vel','acc','jerk']: #
-        #fig_base_sols: 8x6 base_sol.y[j][i] vs base_t_arrays[i]
+        #fig_base_sols: 8x6 base_sol[j][i] vs base_t_arrays[i]
         fig_base_sols, axs_base=plt.subplots(3,1)
         # for c in range(4): # columns (not t),r,th,ph
         for exp in range(exps.size): # tol exp
@@ -290,68 +303,106 @@ if Base_Convergence_graphs:
         axs_base[1].set_ylabel('$\\theta$'+'_'+var)
         axs_base[1].legend()
         axs_base[2].set_xlabel('proper time')
-        axs_base[2].set_ylabel('$\phi$'+'_'+var)
+        axs_base[2].set_ylabel('$\\phi$'+'_'+var)
         axs_base[2].legend()
         fig_base_sols.suptitle(f'Unperturbed Convergence: a,p,e,x = {a,p,e,x}')
         fig_base_sols.set_figheight(15)
         fig_base_sols.set_figwidth(18)
-        plt.savefig(f'Unpert_params_{a}_{p}_{e}_{x}_{var}.png')
+        # plt.savefig(f'Unpert_params_{a}_{p}_{e}_{x}_{var}.png')
         plt.show()
                 
-        #fig_del_r for exp in exps: 6 plots of del_r_arrays[i] vs base_t_arrays[i]
+        #fig_base_del_r for exp in exps: 6 plots of del_r_arrays[i] vs base_t_arrays[i]
 
-        #fig_del_th for exp in exps: 6 plots of del_theta_arrays[i] vs base_t_arrays[i]
-        fig_del, (ax_del_r,ax_del_th,ax_del_ph)=plt.subplots(3,1)
+        #fig_base_del_th for exp in exps: 6 plots of del_theta_arrays[i] vs base_t_arrays[i]
+        fig_base_del, (ax_base_del_r,ax_base_del_th,ax_base_del_ph)=plt.subplots(3,1)
         for i in range(exps.size-1):
-            ax_del_r.plot(times,base_arrays[var]['r'][i]-base_arrays[var]['r'][-1],label="1e-%d" % exps[i])#del_r_arrays[i]
-            ax_del_th.plot(times,base_arrays[var]['theta'][i]-base_arrays[var]['theta'][-1],label="1e-%d" % exps[i])#del_theta_arrays[i]
-            ax_del_ph.plot(times,base_arrays[var]['phi'][i]-base_arrays[var]['phi'][-1],label="1e-%d" % exps[i])#del_theta_arrays[i]
-        ax_del_r.set_xlabel('proper time')
-        ax_del_r.set_ylabel('$\delta$r'+'_'+var)
-        ax_del_th.set_xlabel('proper time')
-        ax_del_th.set_ylabel('$\delta\\theta$'+'_'+var)
-        ax_del_ph.set_xlabel('proper time')
-        ax_del_ph.set_ylabel('$\delta\phi$'+'_'+var)
-        ax_del_r.legend()
-        ax_del_th.legend()
-        ax_del_ph.legend()
-        fig_del.suptitle(f"Unperturbed Deviations from tol=1e-{exps[-1]}: a,p,e,x = {a,p,e,x}")
-        fig_del.set_figheight(15)
-        fig_del.set_figwidth(18)
-        plt.savefig(f'UnpertDeviations_params_{a}_{p}_{e}_{x}_{var}.png')
+            ax_base_del_r.plot(times,base_arrays[var]['r'][i]-base_arrays[var]['r'][-1],label="1e-%d" % exps[i])#del_r_arrays[i]
+            ax_base_del_th.plot(times,base_arrays[var]['theta'][i]-base_arrays[var]['theta'][-1],label="1e-%d" % exps[i])#del_theta_arrays[i]
+            ax_base_del_ph.plot(times,base_arrays[var]['phi'][i]-base_arrays[var]['phi'][-1],label="1e-%d" % exps[i])#del_theta_arrays[i]
+        ax_base_del_r.set_xlabel('proper time')
+        ax_base_del_r.set_ylabel('$\\delta$r'+'_'+var)
+        ax_base_del_th.set_xlabel('proper time')
+        ax_base_del_th.set_ylabel('$\\delta\\theta$'+'_'+var)
+        ax_base_del_ph.set_xlabel('proper time')
+        ax_base_del_ph.set_ylabel('$\\delta\\phi$'+'_'+var)
+        ax_base_del_r.legend()
+        ax_base_del_th.legend()
+        ax_base_del_ph.legend()
+        fig_base_del.suptitle(f"Unperturbed Deviations from tol=1e-{exps[-1]}: a,p,e,x = {a,p,e,x}")
+        fig_base_del.set_figheight(15)
+        fig_base_del.set_figwidth(18)
+        # plt.savefig(f'UnpertDeviations_params_{a}_{p}_{e}_{x}_{var}.png')
         plt.show()
 
-        # #fig_max_dels 2 scatter plots: del_r_max and t_delr_max vs tol and del_theta_max and t_delth_max vs tol
-        # fig_max_dels, (ax_dr_max,ax_dth_max)=plt.subplots(1,2)
+        # #fig_max_base_dels 2 scatter plots: del_r_max and t_base_delr_max vs tol and del_theta_max and t_base_delth_max vs tol
+        # fig_max_base_dels, (ax_dr_max,ax_dth_max)=plt.subplots(1,2)
         # sizes=10*exps
-        # cb1=ax_dr_max.scatter(t_delr_max,del_r_max,s=sizes,c=exps,cmap='RdBu_r')
-        # ax_dr_max.set_title('Max $\delta$r')
-        # fig_max_dels.colorbar(cb1,ax=ax_dr_max)
+        # cb1=ax_dr_max.scatter(t_base_delr_max,del_r_max,s=sizes,c=exps,cmap='RdBu_r')
+        # ax_dr_max.set_title('Max $\\delta$r')
+        # fig_max_base_dels.colorbar(cb1,ax=ax_dr_max)
         # if x*x==1: 
-        #     cb2=ax_dth_max.scatter(t_delth_max,del_theta_max,s=sizes,c=exps,cmap='RdBu_r')
-        #     ax_dth_max.set_title('Max $\delta\\theta$')
-        #     fig_max_dels.colorbar(cb2,ax=ax_dth_max)
-        # fig_max_dels.suptitle("Tolerance Exp = marker size")
-        # # fig_max_dels.set_figheight(15)
-        # # fig_max_dels.set_figwidth(18)
+        #     cb2=ax_dth_max.scatter(t_base_delth_max,del_theta_max,s=sizes,c=exps,cmap='RdBu_r')
+        #     ax_dth_max.set_title('Max $\\delta\\theta$')
+        #     fig_max_base_dels.colorbar(cb2,ax=ax_dth_max)
+        # fig_max_base_dels.suptitle("Tolerance Exp = marker size")
+        # # fig_max_base_dels.set_figheight(15)
+        # # fig_max_base_dels.set_figwidth(18)
         # plt.savefig('UnpertMaxDevs.png')
         # plt.show()
+
+    # h_plus, h_cross plots
+    fig_base_kluge, (ax_base_k_hp,ax_base_k_hc)=plt.subplots(2,1)
+    for i in range(exps.size):
+        ax_base_k_hp.plot(times,base_arrays['hplus'][i],label="1e-%d" % exps[i])#del_r_arrays[i]
+        ax_base_k_hc.plot(times,base_arrays['hcross'][i],label="1e-%d" % exps[i])#del_theta_arrays[i]
+
+    ax_base_k_hp.set_xlabel('proper time') # or coordinate time?
+    ax_base_k_hp.set_ylabel('h_plus')
+    ax_base_k_hc.set_xlabel('proper time')
+    ax_base_k_hc.set_ylabel('h_cross')
+    ax_base_k_hp.legend()
+    ax_base_k_hc.legend()
+    fig_base_kluge.suptitle(f"Unperturbed Convergence: a,p,e,x = {a,p,e,x}\n observedLongitude = $\\pi/4$, observedInclination = $\\pi/6$")
+    fig_base_kluge.set_figheight(15)
+    fig_base_kluge.set_figwidth(18)
+    plt.savefig(f'Unpert_params_{a}_{p}_{e}_{x}_strain.png')
+    plt.show()
+    # Deltas
+    fig_base_del_kluge, (ax_base_del_k_hp,ax_base_del_k_hc)=plt.subplots(2,1)
+    for i in range(exps.size-1):
+        ax_base_del_k_hp.plot(times,base_arrays['hplus'][i]-base_arrays['hplus'][-1],label="1e-%d" % exps[i])#del_r_arrays[i]
+        ax_base_del_k_hc.plot(times,base_arrays['hcross'][i]-base_arrays['hcross'][-1],label="1e-%d" % exps[i])#del_theta_arrays[i]
+
+    ax_base_del_k_hp.set_xlabel('proper time') # or coordinate time?
+    ax_base_del_k_hp.set_ylabel('$\\delta$hplus')
+    ax_base_del_k_hc.set_xlabel('proper time')
+    ax_base_del_k_hc.set_ylabel('$\\delta$hcross')
+    ax_base_del_k_hp.legend()
+    ax_base_del_k_hc.legend()
+    fig_base_del_kluge.suptitle(f"Unperturbed Deviations from tol=1e-{exps[-1]}: a,p,e,x = {a,p,e,x}\n observedLongitude = $\\pi/4$, observedInclination = $\\pi/6$")
+    fig_base_del_kluge.set_figheight(15)
+    fig_base_del_kluge.set_figwidth(18)
+    plt.savefig(f'UnpertDeviations_params_{a}_{p}_{e}_{x}_strain.png')
+    plt.show()
 
 PertST={}
 PertG={}
 for (theta_p,phi_p) in [(np.pi/2,0)]:#,(np.pi/2,np.pi/4),(np.pi/4,0),(0,0) :[(np.pi-np.arccos(1/np.sqrt(3)),-np.pi/3)]
     PertST[(theta_p,phi_p)]={}
     PertG[(theta_p,phi_p)]={}
+    restart=time.perf_counter()
     if Pert_Stability_graphs or Pert_Convergence_graphs:
         for i in range(len(eps_ar)):    
-            PertST[(theta_p,phi_p)][eps_ar[i]]=Spacetime(a)
+            PertST[(theta_p,phi_p)][eps_ar[i]]=Spacetime(a,tau_array=times)
             PertST[(theta_p,phi_p)][eps_ar[i]].Add_Perturbation_Source('point',theta_p,phi_p,Epsilon=eps_ar[i])# -10*eps_ar[i]*np.array([100*(1+0.j),0,0,0,100*(1-0.j)]))
+            
             PertG[(theta_p,phi_p)][eps_ar[i]]=PertST[(theta_p,phi_p)][eps_ar[i]].GeodesicConstructor(p,e,x)
+
             # print(PertST[(theta_p,phi_p)][eps_ar[i]].NetPerturbation.z_array,PertG[(theta_p,phi_p)][eps_ar[i]].zs)
-    
+    print("Construction time:",time.perf_counter()-restart)
     if Pert_Stability_graphs:
     # Test Stability for different Perturbation strengths
-        pert_arrays={
+        pert_stab_arrays={
             't':[], #tau's right now, but perhaps we'd prefer to see BL-time?
             'pos':{
                 'r':[],
@@ -372,101 +423,110 @@ for (theta_p,phi_p) in [(np.pi/2,0)]:#,(np.pi/2,np.pi/4),(np.pi/4,0),(0,0) :[(np
                 'r':[],
                 'theta':[],
                 'phi':[]
-                }
+                },
+            'hplus':[],
+            'hcross':[]
         }
         t_div=np.zeros(len(eps_ar)) # time what integration of perturbed orbit ended noting when the integration ends early do to divergence
-        y_div=np.zeros((len(eps_ar),16)) # pert_sol.y at t_div for each eps
+        y_div=np.zeros((len(eps_ar),16)) # pert_stab_sol at t_div for each eps
         for i in range(len(eps_ar)):
             rtol, atol = 10.**(-12), 10.**(-12)
 
             restart=time.perf_counter()
-            pert_sol=ODE(PertST[(theta_p,phi_p)][eps_ar[i]].IntRHS(),[0,tau_end],PertG[(theta_p,phi_p)][eps_ar[i]].Trajectories[(0,0,0)].ICs.flatten(),t_eval=times,rtol=rtol,atol=atol)#,args=PertG[(theta_p,phi_p)][eps].zs
+            pert_stab_sol=PertST[(theta_p,phi_p)][eps_ar[i]].run_Trajectory(PertG[(theta_p,phi_p)][eps_ar[i]].Trajectories[(0,0,PertG[(theta_p,phi_p)][eps_ar[i]].phi0s[9])])
+            # ODE(PertST[(theta_p,phi_p)][eps_ar[i]].IntRHS(),[0,tau_end],PertG[(theta_p,phi_p)][eps_ar[i]].Trajectories[(0,0,PertG[(theta_p,phi_p)][eps_ar[i]].phi0s[9])].ICs.flatten(),t_eval=times,rtol=rtol,atol=atol)#,args=PertG[(theta_p,phi_p)][eps].zs
             print(f"Perturbed with eps={eps_ar[i]}: time to integrate to {tau_end}: {time.perf_counter()-restart}")
-            PertG[(theta_p,phi_p)][eps_ar[i]].Trajectories[(0,0,0)].Trajectory=pert_sol
-            pert_arrays['t'].append(pert_sol.t)
-            pert_arrays['pos']['r'].append(pert_sol.y[1])
-            pert_arrays['pos']['theta'].append(pert_sol.y[2])
-            pert_arrays['pos']['phi'].append(pert_sol.y[3])
-            # pert_vt_arrays.append(pert_sol.t)
-            pert_arrays['vel']['r'].append(pert_sol.y[5])
-            pert_arrays['vel']['theta'].append(pert_sol.y[6])
-            pert_arrays['vel']['phi'].append(pert_sol.y[7])
-            # pert_at_arrays.append(pert_sol.t)
-            pert_arrays['acc']['r'].append(pert_sol.y[9])
-            pert_arrays['acc']['theta'].append(pert_sol.y[10])
-            pert_arrays['acc']['phi'].append(pert_sol.y[11])
-            # pert_jt_arrays.append(pert_sol.t)
-            pert_arrays['jerk']['r'].append(pert_sol.y[13])
-            pert_arrays['jerk']['theta'].append(pert_sol.y[14])
-            pert_arrays['jerk']['phi'].append(pert_sol.y[15])
-            # t_array_len= pert_sol.t.size
+            # PertG[(theta_p,phi_p)][eps_ar[i]].Trajectories[(0,0,PertG[(theta_p,phi_p)][eps_ar[i]].phi0s[9])].Trajectory=pert_stab_sol
+            # print(PertG[(theta_p,phi_p)][eps_ar[i]].Trajectories[(PertG[(theta_p,phi_p)][eps_ar[i]].xi0s[5],0,0)].Trajectory[:,0:2])
+            pert_stab_arrays['t'].append(times) # This will be a problem when it's unstable.
+            pert_stab_arrays['pos']['r'].append(pert_stab_sol[0,1])
+            pert_stab_arrays['pos']['theta'].append(pert_stab_sol[0,2])
+            pert_stab_arrays['pos']['phi'].append(pert_stab_sol[0,3])
+            # pert_stab_vt_arrays.append(pert_stab_sol.t)
+            pert_stab_arrays['vel']['r'].append(pert_stab_sol[1,1])
+            pert_stab_arrays['vel']['theta'].append(pert_stab_sol[1,2])
+            pert_stab_arrays['vel']['phi'].append(pert_stab_sol[1,3])
+            # pert_stab_at_arrays.append(pert_stab_sol.t)
+            pert_stab_arrays['acc']['r'].append(pert_stab_sol[2,1])
+            pert_stab_arrays['acc']['theta'].append(pert_stab_sol[2,2])
+            pert_stab_arrays['acc']['phi'].append(pert_stab_sol[2,3])
+            # pert_stab_jt_arrays.append(pert_stab_sol.t)
+            pert_stab_arrays['jerk']['r'].append(pert_stab_sol[3,1])
+            pert_stab_arrays['jerk']['theta'].append(pert_stab_sol[3,2])
+            pert_stab_arrays['jerk']['phi'].append(pert_stab_sol[3,3])
+            # t_array_len= pert_stab_sol.t.size
 
-            # pert_ys.append(pert_sol.y)
-            pt_array_len= pert_sol.t.size
-            if pert_sol.t[-1]<tau_end:
-                t_div[i]=pert_sol.t[-1]
-                y_div[i]=[val[-1] for val in pert_sol.y]
-            else:
-                t_div[i]=np.nan
-                y_div[i]=[np.nan for _ in pert_sol.y]
+            # pert_stab_kinematics=np.reshape(np.transpose(pert_stab_sol),(len(pert_stab_sol.t),4,4))
+            pert_stab_hplusList, pert_stab_hcrossList=PertST[(theta_p,phi_p)][eps_ar[i]].calc_Strain(PertG[(theta_p,phi_p)][eps_ar[i]].Trajectories[(0,0,PertG[(theta_p,phi_p)][eps_ar[i]].phi0s[9])])# kluge_h(pert_stab_sol)
+            pert_stab_arrays['hplus'].append(np.array(pert_stab_hplusList))
+            pert_stab_arrays['hcross'].append(np.array(pert_stab_hcrossList))
+
+            # # pert_stab_ys.append(pert_stab_sol)
+            # pt_array_len= pert_stab_sol.t.size
+            # if pert_stab_sol.t[-1]<tau_end:
+            #     t_div[i]=pert_stab_sol.t[-1]
+            #     y_div[i]=[val[-1] for val in pert_stab_sol]
+            # else:
+            #     t_div[i]=np.nan
+            #     y_div[i]=[np.nan for _ in pert_stab_sol]
         print(-(start-time.perf_counter())/60,"min")
 
         for var in ['pos','vel','acc','jerk']: #
-            #fig_pert_sols: 8x6 pert_sol.y[j][i] vs pert_t_arrays[i]
-            fig_pert_sols, axs_pert=plt.subplots(3,1)
+            #fig_pert_stab_sols: 8x6 pert_stab_sol[j][i] vs pert_stab_t_arrays[i]
+            fig_pert_stab_sols, axs_pert_stab=plt.subplots(3,1)
             # for c in range(4): # columns (not t),r,th,ph
             for i in range(1,len(eps_ar)):
-                axs_pert[0].plot(pert_arrays['t'][i],pert_arrays[var]['r'][i]-pert_arrays[var]['r'][0],label=f"$\epsilon$={eps_ar[i]}")
-                axs_pert[1].plot(pert_arrays['t'][i],pert_arrays[var]['theta'][i]-pert_arrays[var]['theta'][0],label=f"$\epsilon$={eps_ar[i]}")
-                axs_pert[2].plot(pert_arrays['t'][i],pert_arrays[var]['phi'][i]-pert_arrays[var]['phi'][0],label=f"$\epsilon$={eps_ar[i]}")
-                    # axs_pert[1,c].plot(pert_t_arrays[exp],del_r_arrays[exp],label="1e-%f" % exps[exp])# row for velocity
-            axs_pert[0].set_xlabel('proper time')
-            axs_pert[0].set_ylabel('radius'+'_'+var)
-            axs_pert[0].legend()
-            axs_pert[1].set_xlabel('proper time')
-            axs_pert[1].set_ylabel('$\\theta$'+'_'+var)
-            axs_pert[1].legend()
-            axs_pert[2].set_xlabel('proper time')
-            axs_pert[2].set_ylabel('$\phi$'+'_'+var)
-            axs_pert[2].legend()
-            fig_pert_sols.set_figheight(15)
-            fig_pert_sols.set_figwidth(18)
-            fig_pert_sols.suptitle(f"Point-Like Perturber ($\\theta_p,\phi_p$)={theta_p,phi_p}\n tol=1e-12 a,p,e,x={a,p,e,x}\n$\delta$ from unperturbed") 
+                axs_pert_stab[0].plot(pert_stab_arrays['t'][i],pert_stab_arrays[var]['r'][i]-pert_stab_arrays[var]['r'][0],label=f"$\\epsilon$={eps_ar[i]}")
+                axs_pert_stab[1].plot(pert_stab_arrays['t'][i],pert_stab_arrays[var]['theta'][i]-pert_stab_arrays[var]['theta'][0],label=f"$\\epsilon$={eps_ar[i]}")
+                axs_pert_stab[2].plot(pert_stab_arrays['t'][i],pert_stab_arrays[var]['phi'][i]-pert_stab_arrays[var]['phi'][0],label=f"$\\epsilon$={eps_ar[i]}")
+                    # axs_pert_stab[1,c].plot(pert_stab_t_arrays[exp],del_r_arrays[exp],label="1e-%f" % exps[exp])# row for velocity
+            axs_pert_stab[0].set_xlabel('proper time')
+            axs_pert_stab[0].set_ylabel('radius'+'_'+var)
+            axs_pert_stab[0].legend()
+            axs_pert_stab[1].set_xlabel('proper time')
+            axs_pert_stab[1].set_ylabel('$\\theta$'+'_'+var)
+            axs_pert_stab[1].legend()
+            axs_pert_stab[2].set_xlabel('proper time')
+            axs_pert_stab[2].set_ylabel('$\\phi$'+'_'+var)
+            axs_pert_stab[2].legend()
+            fig_pert_stab_sols.set_figheight(15)
+            fig_pert_stab_sols.set_figwidth(18)
+            fig_pert_stab_sols.suptitle(f"Point-Like Perturber ($\\theta_p,\\phi_p$)={theta_p,phi_p}\n tol=1e-12 a,p,e,x={a,p,e,x}\n$\\delta$ from unperturbed") 
             plt.savefig(f'PLpert_zp{np.cos(theta_p)}_phip{phi_p}_e{e}_x{x}_deltas_BL_{var}.png') #_long
             plt.show()
-            # #fig_pert_sols: 8x6 pert_sol.y[j][i] vs pert_t_arrays[i]
-            # fig_pert_sols, axs_pert=plt.subplots(1,3)
+            # #fig_pert_stab_sols: 8x6 pert_stab_sol[j][i] vs pert_stab_t_arrays[i]
+            # fig_pert_stab_sols, axs_pert_stab=plt.subplots(1,3)
             # # for c in range(4): # columns (not t),r,th,ph
             # for i in range(len(eps_ar)):
-            #     axs_pert[0].plot(times,pert_r_arrays[i]-base_r_arrays[4],label=f"$\epsilon$={eps_ar[i]}")
-            #     axs_pert[1].plot(times,pert_theta_arrays[i]-base_theta_arrays[4],label=f"$\epsilon$={eps_ar[i]}")
-            #     axs_pert[2].plot(times,pert_phi_arrays[i]-base_phi_arrays[4],label=f"$\epsilon$={eps_ar[i]}")
-            #         # axs_pert[1,c].plot(pert_t_arrays[exp],del_r_arrays[exp],label="1e-%f" % exps[exp])# row for velocity
-            # axs_pert[0].set_xlabel('proper time')
-            # axs_pert[0].set_ylabel('radius')
-            # axs_pert[0].legend()
-            # axs_pert[1].set_xlabel('proper time')
-            # axs_pert[1].set_ylabel('$\\theta$')
-            # axs_pert[1].legend()
-            # axs_pert[2].set_xlabel('proper time')
-            # axs_pert[2].set_ylabel('$\phi$')
-            # axs_pert[2].legend()
-            # fig_pert_sols.suptitle(f"Perturbed minus Unperturbed")
-            # plt.savefig(f'PLpert_zp{np.cos(theta_p)}minusBase.png')
+            #     axs_pert_stab[0].plot(times,pert_stab_r_arrays[i]-base_r_arrays[4],label=f"$\\epsilon$={eps_ar[i]}")
+            #     axs_pert_stab[1].plot(times,pert_stab_theta_arrays[i]-base_theta_arrays[4],label=f"$\\epsilon$={eps_ar[i]}")
+            #     axs_pert_stab[2].plot(times,pert_stab_phi_arrays[i]-base_phi_arrays[4],label=f"$\\epsilon$={eps_ar[i]}")
+            #         # axs_pert_stab[1,c].plot(pert_stab_t_arrays[exp],del_r_arrays[exp],label="1e-%f" % exps[exp])# row for velocity
+            # axs_pert_stab[0].set_xlabel('proper time')
+            # axs_pert_stab[0].set_ylabel('radius')
+            # axs_pert_stab[0].legend()
+            # axs_pert_stab[1].set_xlabel('proper time')
+            # axs_pert_stab[1].set_ylabel('$\\theta$')
+            # axs_pert_stab[1].legend()
+            # axs_pert_stab[2].set_xlabel('proper time')
+            # axs_pert_stab[2].set_ylabel('$\\phi$')
+            # axs_pert_stab[2].legend()
+            # fig_pert_stab_sols.suptitle(f"Perturbed minus Unpert_staburbed")
+            # plt.savefig(f'PLpert_stab_zp{np.cos(theta_p)}minusBase.png')
             # plt.show()
 
             # #fig_t_div plot of t_div vs tol_exp
             # fig_t_div, ax_t_div=plt.subplots()
             # fig_t_div.suptitle('Proper Time to Divergence')
             # ax_t_div.stem(eps_ar,t_div,use_line_collection=True)
-            # ax_t_div.set_xlabel('$\epsilon$')
+            # ax_t_div.set_xlabel('$\\epsilon$')
             # ax_t_div.set_ylabel('proper time')
             # # fig_t_div.set_figheight(10)
             # # fig_t_div.set_figwidth(14)
-            # plt.savefig(f'PLpert_zp{np.cos(theta_p)}DivergenceTimes.png')
+            # plt.savefig(f'PLpert_stab_zp{np.cos(theta_p)}DivergenceTimes.png')
             # plt.show()
 
-            # #fig_pert_div: 8 subplots y_div vs t_div scatter plot labeled by exp
+            # #fig_pert_stab_div: 8 subplots y_div vs t_div scatter plot labeled by exp
             # fig_y_div, axs_y_div=plt.subplots(1,2)
             # # sizes=10*
             # cbrdiv=axs_y_div[0].scatter(t_div,[val[1] for val in y_div],c=eps_ar,label='r')
@@ -479,10 +539,26 @@ for (theta_p,phi_p) in [(np.pi/2,0)]:#,(np.pi/2,np.pi/4),(np.pi/4,0),(0,0) :[(np
             # axs_y_div[1].set_xlabel('time of divergence')
             # axs_y_div[1].legend()
             # fig_y_div.colorbar(cbthdiv,ax=axs_y_div[1],extend='both')
-            # plt.savefig(f'PLpert_zp{np.cos(theta_p)}ValuesAtDivergence.png')
+            # plt.savefig(f'PLpert_stab_zp{np.cos(theta_p)}ValuesAtDivergence.png')
             # plt.show()
 
         # 
+        fig_pert_stab_kluge, (ax_pert_stab_k_hp,ax_pert_stab_k_hc)=plt.subplots(2,1)
+        for i in range(1,len(eps_ar)):
+            ax_pert_stab_k_hp.plot(times,pert_stab_arrays['hplus'][i]-pert_stab_arrays['hplus'][0],label="1e-%d" % exps[i])#del_r_arrays[i]
+            ax_pert_stab_k_hc.plot(times,pert_stab_arrays['hcross'][i]-pert_stab_arrays['hcross'][0],label="1e-%d" % exps[i])#del_theta_arrays[i]
+
+        ax_pert_stab_k_hp.set_xlabel('proper time') # or coordinate time?
+        ax_pert_stab_k_hp.set_ylabel('$\\delta$hplus')
+        ax_pert_stab_k_hc.set_xlabel('proper time')
+        ax_pert_stab_k_hc.set_ylabel('$\\delta$hcross')
+        ax_pert_stab_k_hp.legend()
+        ax_pert_stab_k_hc.legend()
+        fig_pert_stab_kluge.set_figheight(15)
+        fig_pert_stab_kluge.set_figwidth(18)
+        fig_pert_stab_kluge.suptitle(f"Point-Like Perturber ($\\theta_p,\\phi_p$)={theta_p,phi_p}\n tol=1e-12 a,p,e,x={a,p,e,x}\n$\\delta$ from unperturbed\n observedLongitude = $\\pi/4$, observedInclination = $\\pi/6$") 
+        plt.savefig(f'PLpert_zp{np.cos(theta_p)}_phip{phi_p}_e{e}_x{x}_delta_strain.png') #_long
+        plt.show()
         # eps=10**(-5) #eps_ar[3]
         # # strong perturbations will cause accelerations too great for scipy's solver to integrate
         # # 1e-5 diverges around t=6500 for r=12.8  
@@ -496,7 +572,7 @@ for (theta_p,phi_p) in [(np.pi/2,0)]:#,(np.pi/2,np.pi/4),(np.pi/4,0),(0,0) :[(np
         # Test Convergence of Perturbed Trajectories
         # exps=np.arange(8,14.) #exponents for the integration tolerances
         eps=10**(-6)
-        pert_arrays={
+        pert_conv_arrays={
             't':[],
             'pos':{
                 'r':[],
@@ -517,108 +593,152 @@ for (theta_p,phi_p) in [(np.pi/2,0)]:#,(np.pi/2,np.pi/4),(np.pi/4,0),(0,0) :[(np
                 'r':[],
                 'theta':[],
                 'phi':[]
-                }
+                },
+            'hplus':[],
+            'hcross':[]
         }
         for i in range(exps.size):
             rtol, atol = 10.**(-exps[i]), 10.**(-exps[i])
 
             restart=time.perf_counter()
-            pert_sol=ODE(PertST[(theta_p,phi_p)][eps].IntRHS(),[0,tau_end],PertG[(theta_p,phi_p)][eps].Trajectories[(0,0,0)].ICs.flatten(),t_eval=times,rtol=rtol,atol=atol)#,args=PertG[(theta_p,phi_p)][eps].zs
+            pert_conv_sol=PertST[(theta_p,phi_p)][eps].run_Trajectory(PertG[(theta_p,phi_p)][eps].Trajectories[(0,0,0)],t_eval=times,rtol=rtol,atol=atol)
+            #ODE(PertST[(theta_p,phi_p)][eps].IntRHS(),[0,tau_end],PertG[(theta_p,phi_p)][eps].Trajectories[(0,0,0)].ICs.flatten(),t_eval=times,rtol=rtol,atol=atol)#,args=PertG[(theta_p,phi_p)][eps].zs
             print(f"Perturbed with tol={rtol}: time to integrate {tau_end*10} steps: {time.perf_counter()-restart}")
-            pert_arrays['t'].append(pert_sol.t)
-            pert_arrays['pos']['r'].append(pert_sol.y[1])
-            pert_arrays['pos']['theta'].append(pert_sol.y[2])
-            pert_arrays['pos']['phi'].append(pert_sol.y[3])
-            # pert_vt_arrays.append(pert_sol.t)
-            pert_arrays['vel']['r'].append(pert_sol.y[5])
-            pert_arrays['vel']['theta'].append(pert_sol.y[6])
-            pert_arrays['vel']['phi'].append(pert_sol.y[7])
-            # pert_at_arrays.append(pert_sol.t)
-            pert_arrays['acc']['r'].append(pert_sol.y[9])
-            pert_arrays['acc']['theta'].append(pert_sol.y[10])
-            pert_arrays['acc']['phi'].append(pert_sol.y[11])
-            # pert_jt_arrays.append(pert_sol.t)
-            pert_arrays['jerk']['r'].append(pert_sol.y[13])
-            pert_arrays['jerk']['theta'].append(pert_sol.y[14])
-            pert_arrays['jerk']['phi'].append(pert_sol.y[15])
-            # t_array_len= pert_sol.t.size
+            pert_conv_arrays['t'].append(times)
+            pert_conv_arrays['pos']['r'].append(pert_conv_sol[0,1])
+            pert_conv_arrays['pos']['theta'].append(pert_conv_sol[0,2])
+            pert_conv_arrays['pos']['phi'].append(pert_conv_sol[0,3])
+            # pert_conv_vt_arrays.append()
+            pert_conv_arrays['vel']['r'].append(pert_conv_sol[1,1])
+            pert_conv_arrays['vel']['theta'].append(pert_conv_sol[1,2])
+            pert_conv_arrays['vel']['phi'].append(pert_conv_sol[1,3])
+            # pert_conv_at_arrays.append()
+            pert_conv_arrays['acc']['r'].append(pert_conv_sol[2,1])
+            pert_conv_arrays['acc']['theta'].append(pert_conv_sol[2,2])
+            pert_conv_arrays['acc']['phi'].append(pert_conv_sol[2,3])
+            # pert_conv_jt_arrays.append()
+            pert_conv_arrays['jerk']['r'].append(pert_conv_sol[3,1])
+            pert_conv_arrays['jerk']['theta'].append(pert_conv_sol[3,2])
+            pert_conv_arrays['jerk']['phi'].append(pert_conv_sol[3,3])
+            # t_array_len= pert_conv_sol.t.size
+
+            # pert_conv_kinematics=np.reshape(np.transpose(pert_conv_sol),(len(pert_conv_sol.t),4,4))
+            pert_conv_hplusList, pert_conv_hcrossList=PertST[(theta_p,phi_p)][eps].calc_Strain(PertG[(theta_p,phi_p)][eps].Trajectories[(0,0,0)])# kluge_h(pert_conv_sol)
+            pert_conv_arrays['hplus'].append(np.array(pert_conv_hplusList))
+            pert_conv_arrays['hcross'].append(np.array(pert_conv_hcrossList))
         print((start-time.perf_counter())/60,"min")
 
         for var in ['pos','vel','acc','jerk']: #
-            #fig_pert_sols: 8x6 pert_sol.y[j][i] vs pert_t_arrays[i]
-            fig_pert_sols, axs_pert=plt.subplots(3,1)
+            #fig_pert_conv_sols: 8x6 pert_conv_sol[j][i] vs pert_conv_t_arrays[i]
+            fig_pert_conv_sols, axs_pert_conv=plt.subplots(3,1)
             # for c in range(4): # columns (not t),r,th,ph
             for exp in range(exps.size):# tol exp
-                axs_pert[0].plot(pert_arrays['t'][exp],pert_arrays[var]['r'][exp],label=f"tol={exps[exp]}")# f"$\epsilon$={eps_ar[exp]}")
-                axs_pert[1].plot(pert_arrays['t'][exp],pert_arrays[var]['theta'][exp],label=f"tol={exps[exp]}")# f"$\epsilon$={eps_ar[exp]}")
-                axs_pert[2].plot(pert_arrays['t'][exp],pert_arrays[var]['phi'][exp],label=f"tol={exps[exp]}")# f"$\epsilon$={eps_ar[exp]}")
-                    # axs_pert[1,c].plot(pert_t_arrays[exp],del_r_arrays[exp],label="1e-%f" % exps[exp])# row for velocity
-            axs_pert[0].set_xlabel('proper time')
-            axs_pert[0].set_ylabel('radius'+'_'+var)
-            axs_pert[0].legend()
-            axs_pert[1].set_xlabel('proper time')
-            axs_pert[1].set_ylabel('$\\theta$'+'_'+var)
-            axs_pert[1].legend()
-            axs_pert[2].set_xlabel('proper time')
-            axs_pert[2].set_ylabel('$\phi$'+'_'+var)
-            axs_pert[2].legend()
-            fig_pert_sols.set_figheight(15)
-            fig_pert_sols.set_figwidth(18)
-            fig_pert_sols.suptitle(f"Point-Like Perturber ($\\theta_p,\phi_p$)={theta_p,phi_p}\n $\epsilon$={eps} a,p,e,x={a,p,e,x}") 
-            plt.savefig(f'PLpert_zp{np.cos(theta_p)}_Convergence_for_eps{eps}_BL_{var}.png')
+                axs_pert_conv[0].plot(pert_conv_arrays['t'][exp],pert_conv_arrays[var]['r'][exp],label=f"tol={exps[exp]}")# f"$\\epsilon$={eps_ar[exp]}")
+                axs_pert_conv[1].plot(pert_conv_arrays['t'][exp],pert_conv_arrays[var]['theta'][exp],label=f"tol={exps[exp]}")# f"$\\epsilon$={eps_ar[exp]}")
+                axs_pert_conv[2].plot(pert_conv_arrays['t'][exp],pert_conv_arrays[var]['phi'][exp],label=f"tol={exps[exp]}")# f"$\\epsilon$={eps_ar[exp]}")
+                    # axs_pert_conv[1,c].plot(pert_conv_t_arrays[exp],del_r_arrays[exp],label="1e-%f" % exps[exp])# row for velocity
+            axs_pert_conv[0].set_xlabel('proper time')
+            axs_pert_conv[0].set_ylabel('radius'+'_'+var)
+            axs_pert_conv[0].legend()
+            axs_pert_conv[1].set_xlabel('proper time')
+            axs_pert_conv[1].set_ylabel('$\\theta$'+'_'+var)
+            axs_pert_conv[1].legend()
+            axs_pert_conv[2].set_xlabel('proper time')
+            axs_pert_conv[2].set_ylabel('$\\phi$'+'_'+var)
+            axs_pert_conv[2].legend()
+            fig_pert_conv_sols.set_figheight(15)
+            fig_pert_conv_sols.set_figwidth(18)
+            fig_pert_conv_sols.suptitle(f"Point-Like Perturber ($\\theta_p,\\phi_p$)={theta_p,phi_p}\n $\\epsilon$={eps} a,p,e,x={a,p,e,x}") 
+            plt.savefig(f'PLpert_conv_zp{np.cos(theta_p)}_Convergence_for_eps{eps}_BL_{var}.png')
             plt.show()
-                # #fig_pert_sols: 8x6 pert_sol.y[j][i] vs pert_t_arrays[i]
-                # fig_pert_sols, axs_pert=plt.subplots(1,3)
+                # #fig_pert_conv_sols: 8x6 pert_conv_sol[j][i] vs pert_conv_t_arrays[i]
+                # fig_pert_conv_sols, axs_pert_conv=plt.subplots(1,3)
                 # # for c in range(4): # columns (not t),r,th,ph
                 # for exp in range(exps.size): # tol exp
-                #     axs_pert[0].plot(times,pert_r_arrays[exp]-base_r_arrays[exp],label="1e-%d" % exps[exp])
-                #     axs_pert[1].plot(times,pert_theta_arrays[exp]-base_theta_arrays[exp],label="1e-%d" % exps[exp])
-                #     axs_pert[2].plot(times,pert_phi_arrays[exp]-base_phi_arrays[exp],label="1e-%d" % exps[exp])
-                #         # axs_pert[1,c].plot(pert_t_arrays[exp],del_r_arrays[exp],label="1e-%f" % exps[exp])# row for velocity
-                # axs_pert[0].set_xlabel('proper time')
-                # axs_pert[0].set_ylabel('radius')
-                # axs_pert[0].legend()
-                # axs_pert[1].set_xlabel('proper time')
-                # axs_pert[1].set_ylabel('$\\theta$')
-                # axs_pert[1].legend()
-                # axs_pert[2].set_xlabel('proper time')
-                # axs_pert[2].set_ylabel('$\phi$')
-                # axs_pert[2].legend()
-                # fig_pert_sols.suptitle("Perturbed Deltas for eps=%f"%eps)
+                #     axs_pert_conv[0].plot(times,pert_conv_r_arrays[exp]-base_r_arrays[exp],label="1e-%d" % exps[exp])
+                #     axs_pert_conv[1].plot(times,pert_conv_theta_arrays[exp]-base_theta_arrays[exp],label="1e-%d" % exps[exp])
+                #     axs_pert_conv[2].plot(times,pert_conv_phi_arrays[exp]-base_phi_arrays[exp],label="1e-%d" % exps[exp])
+                #         # axs_pert_conv[1,c].plot(pert_conv_t_arrays[exp],del_r_arrays[exp],label="1e-%f" % exps[exp])# row for velocity
+                # axs_pert_conv[0].set_xlabel('proper time')
+                # axs_pert_conv[0].set_ylabel('radius')
+                # axs_pert_conv[0].legend()
+                # axs_pert_conv[1].set_xlabel('proper time')
+                # axs_pert_conv[1].set_ylabel('$\\theta$')
+                # axs_pert_conv[1].legend()
+                # axs_pert_conv[2].set_xlabel('proper time')
+                # axs_pert_conv[2].set_ylabel('$\\phi$')
+                # axs_pert_conv[2].legend()
+                # fig_pert_conv_sols.suptitle("Perturbed Deltas for eps=%f"%eps)
                 # plt.show()
 
             # Deltas from lowest tolerance
-            fig_pert_sols, axs_pert=plt.subplots(3,1)
+            fig_pert_conv_sols, axs_pert_conv=plt.subplots(3,1)
             # for c in range(4): # columns (not t),r,th,ph
             for exp in range(exps.size-1): # tol exp
-                axs_pert[0].plot(pert_arrays['t'][exp],pert_arrays[var]['r'][-1]-pert_arrays[var]['r'][exp],label="tol=1e-%d" % exps[exp])
-                axs_pert[1].plot(pert_arrays['t'][exp],pert_arrays[var]['theta'][-1]-pert_arrays[var]['theta'][exp],label="tol=1e-%d" % exps[exp])
-                axs_pert[2].plot(pert_arrays['t'][exp],pert_arrays[var]['phi'][-1]-pert_arrays[var]['phi'][exp],label="tol=1e-%d" % exps[exp])
-                    # axs_pert[1,c].plot(pert_t_arrays[exp],del_r_arrays[exp],label="1e-%f" % exps[exp])# row for velocity
-            axs_pert[0].set_xlabel('proper time')
-            axs_pert[0].set_ylabel('radius'+'_'+var)
-            axs_pert[0].legend()
-            axs_pert[1].set_xlabel('proper time')
-            axs_pert[1].set_ylabel('$\\theta$'+'_'+var)
-            axs_pert[1].legend()
-            axs_pert[2].set_xlabel('proper time')
-            axs_pert[2].set_ylabel('$\phi$'+'_'+var)
-            axs_pert[2].legend()
-            fig_pert_sols.set_figheight(15)
-            fig_pert_sols.set_figwidth(18)
-            fig_pert_sols.suptitle(f"Point-Like Perturber ($\\theta_p,\phi_p$)={theta_p,phi_p}\n  $\Delta$(tol=1e-13) $\epsilon$={eps} a,p,e,x={a,p,e,x}") 
+                axs_pert_conv[0].plot(pert_conv_arrays['t'][exp],pert_conv_arrays[var]['r'][exp]-pert_conv_arrays[var]['r'][-1],label="tol=1e-%d" % exps[exp])
+                axs_pert_conv[1].plot(pert_conv_arrays['t'][exp],pert_conv_arrays[var]['theta'][exp]-pert_conv_arrays[var]['theta'][-1],label="tol=1e-%d" % exps[exp])
+                axs_pert_conv[2].plot(pert_conv_arrays['t'][exp],pert_conv_arrays[var]['phi'][exp]-pert_conv_arrays[var]['phi'][-1],label="tol=1e-%d" % exps[exp])
+                    # axs_pert_conv[1,c].plot(pert_conv_t_arrays[exp],del_r_arrays[exp],label="1e-%f" % exps[exp])# row for velocity
+            axs_pert_conv[0].set_xlabel('proper time')
+            axs_pert_conv[0].set_ylabel('radius'+'_'+var)
+            axs_pert_conv[0].legend()
+            axs_pert_conv[1].set_xlabel('proper time')
+            axs_pert_conv[1].set_ylabel('$\\theta$'+'_'+var)
+            axs_pert_conv[1].legend()
+            axs_pert_conv[2].set_xlabel('proper time')
+            axs_pert_conv[2].set_ylabel('$\\phi$'+'_'+var)
+            axs_pert_conv[2].legend()
+            fig_pert_conv_sols.set_figheight(15)
+            fig_pert_conv_sols.set_figwidth(18)
+            fig_pert_conv_sols.suptitle(f"Point-Like Perturber ($\\theta_p,\\phi_p$)={theta_p,phi_p}\n  $\\Delta$(tol=1e-{exps[-1]}) $\\epsilon$={eps} a,p,e,x={a,p,e,x}") 
             plt.savefig(f'PL_del13_zp{np.cos(theta_p)}_Convergence_for_eps{eps}_BL_{var}.png')
             plt.show()
 
+        
+        # h_plus, h_cross plots
+        fig_pert_conv_kluge, (ax_pert_conv_k_hp,ax_pert_conv_k_hc)=plt.subplots(2,1)
+        for i in range(exps.size):
+            ax_pert_conv_k_hp.plot(times,pert_conv_arrays['hplus'][i],label="1e-%d" % exps[i])#del_r_arrays[i]
+            ax_pert_conv_k_hc.plot(times,pert_conv_arrays['hcross'][i],label="1e-%d" % exps[i])#del_theta_arrays[i]
+
+        ax_pert_conv_k_hp.set_xlabel('proper time') # or coordinate time?
+        ax_pert_conv_k_hp.set_ylabel('h_plus')
+        ax_pert_conv_k_hc.set_xlabel('proper time')
+        ax_pert_conv_k_hc.set_ylabel('h_cross')
+        ax_pert_conv_k_hp.legend()
+        ax_pert_conv_k_hc.legend()
+        fig_pert_conv_kluge.suptitle(f"Point-Like Perturber ($\\theta_p,\\phi_p$)={theta_p,phi_p}\n $\\epsilon$={eps} a,p,e,x={a,p,e,x}\n observedLongitude = $\\pi/4$, observedInclination = $\\pi/6$")
+        fig_pert_conv_kluge.set_figheight(15)
+        fig_pert_conv_kluge.set_figwidth(18)
+        plt.savefig(f'PLpert_conv_zp{np.cos(theta_p)}_Convergence_for_eps{eps}__strain.png')
+        plt.show()
+        # Deltas
+        fig_pert_conv_del_kluge, (ax_pert_conv_del_k_hp,ax_pert_conv_del_k_hc)=plt.subplots(2,1)
+        for i in range(exps.size-1):
+            ax_pert_conv_del_k_hp.plot(times,pert_conv_arrays['hplus'][i]-pert_conv_arrays['hplus'][-1],label="1e-%d" % exps[i])#del_r_arrays[i]
+            ax_pert_conv_del_k_hc.plot(times,pert_conv_arrays['hcross'][i]-pert_conv_arrays['hcross'][-1],label="1e-%d" % exps[i])#del_theta_arrays[i]
+
+        ax_pert_conv_del_k_hp.set_xlabel('proper time') # or coordinate time?
+        ax_pert_conv_del_k_hp.set_ylabel('$\\delta$hplus')
+        ax_pert_conv_del_k_hc.set_xlabel('proper time')
+        ax_pert_conv_del_k_hc.set_ylabel('$\\delta$hcross')
+        ax_pert_conv_del_k_hp.legend()
+        ax_pert_conv_del_k_hc.legend()
+        fig_pert_conv_del_kluge.suptitle(f"Point-Like Perturber ($\\theta_p,\\phi_p$)={theta_p,phi_p}\n  $\\Delta$(tol=1e-{exps[-1]}) $\\epsilon$={eps} a,p,e,x={a,p,e,x}\n observedLongitude = $\\pi/4$, observedInclination = $\\pi/6$")
+        fig_pert_conv_del_kluge.set_figheight(15)
+        fig_pert_conv_del_kluge.set_figwidth(18)
+        plt.savefig(f'PL_del13_zp{np.cos(theta_p)}_Convergence_for_eps{eps}_strain.png')
+        plt.show()
+
 print((start-time.perf_counter())/60,"min")
 # print("tau_end=",pert_sol.t[-1],"pert_sol runtime=",time.perf_counter()-restart,"sol.t length=",pert_sol.t.shape)
-# print("pert size=",pert_sol.y.shape)
+# print("pert size=",pert_sol.shape)
 # print(pert_sol.nfev)
-# if pert_sol.t[-1]<tau_end: print("Integration ended early because the acceleration exceeded the solver's capacity. This probably means the perturbation destabilized the orbit.")
+# if pert_sol.t[-1]<tau_end: print("Integration ended early because the acceleration exceeded the solver's capacity. This probably means the perturbation deconvilized the orbit.")
 
 
 # from math import floor
-# print("base_sol.phi: {}".format([base_sol.y[3][floor(n)] for n in range(0,t_array_len,floor(t_array_len/Nsteps) )]))
-# print("pert_sol.phi: {}".format([pert_sol.y[3][floor(n)] for n in range(0,pt_array_len,floor(pt_array_len/Nsteps) )]))
-# print("base_sol.r: {}".format([base_sol.y[1][floor(n)] for n in range(0,t_array_len,floor(t_array_len/Nsteps) )]))
-# print("pert_sol.r: {}".format([pert_sol.y[1][floor(n)] for n in range(0,pt_array_len,floor(pt_array_len/Nsteps) )]))
+# print("base_sol.phi: {}".format([base_sol[0,3][floor(n)] for n in range(0,t_array_len,floor(t_array_len/Nsteps) )]))
+# print("pert_sol.phi: {}".format([pert_sol[0,3][floor(n)] for n in range(0,pt_array_len,floor(pt_array_len/Nsteps) )]))
+# print("base_sol.r: {}".format([base_sol[0,1][floor(n)] for n in range(0,t_array_len,floor(t_array_len/Nsteps) )]))
+# print("pert_sol.r: {}".format([pert_sol[0,1][floor(n)] for n in range(0,pt_array_len,floor(pt_array_len/Nsteps) )]))

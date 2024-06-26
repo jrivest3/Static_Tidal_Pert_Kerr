@@ -299,7 +299,7 @@ def dGamma(M,a,radius,theta,phi_star,z_array):
     pi= taubar*rho/rhobar # is np.conj faster?
     pibar= tau*rhobar/rho
     beta= (-rhobar/(2*sqrtof2)*CosTH/SinTH)
-    # betabar= beta*rho/rhobar
+    betabar= beta*rho/rhobar
     # eps=0
     # epsbar=0
     mu= rho*rho*rhobar*Delta/2
@@ -326,7 +326,7 @@ def dGamma(M,a,radius,theta,phi_star,z_array):
     InvTet=np.array([-nBLd,-lBLd,mbBLd,mBLd]) # np.array([-nKNd,-lKNd,mbKNd,mKNd]) # negate each (-1*) for (+---), but doesn't change end result?
     # print(np.einsum('ij,jk',InvTet,Tet)) # these are correct
     
-    sY2m=swsh_array(ell, theta, phi_star).reshape((2*ell+1,2*ell+1))
+    sY2m=swsh_array(ell, theta, phi_star).reshape((2*ell+1,2*ell+1)) # Are these Goldberg of Penrose and Rindler?
     
     # The z's may be complex, but have a reality condition
     # z[-m]=(-1)**m * np.conj(z[m]),
@@ -394,17 +394,26 @@ def dGamma(M,a,radius,theta,phi_star,z_array):
     Thornphnm=0
     Thornphmm=0
 
+    # Thornhnndag=0
+    # Thornhnm=0
+    # Thornhmm=0
+    # Ethhnndag=0
+    # Ethhnm=0
+    # Ethhmm=0
+    # Ethphnndag=0
+    # Ethphnm=0
+    # Ethphmm=0
     Thornhnndag=np.sum(rho * ( - sqrtof6 * Y02m * rho * ( ThornGqlm + 2 * Gqlm \
     * rho ) + 2 * sqrtof2 * Y12m * ( ThornGqlm + Gqlm * ( rhobar + 2 * \
     rho ) ) * taubar )
     )
 
-    Ethhnndag=np.sum(0.5 * Gqlm * ( rho * ( -6 * sqrtof2 * Y12m * rhobar * rho \
-    + ( 8 * Y22m * rhobar * taubar + 4 * sqrtof6 * Y02m * ( rhobar + rho \
-    ) * taubar ) ) + 2 * sqrtof2 * Y12m * ( 3 * PsiCDe2 * rhobar + ( \
-    PsiCDe2bar * rho + ( 2 * mu * rhobar * ( - rhobar + rho ) -2 * ( 2 * \
-    rhobar + rho ) * ( taubar*taubar ) ) ) ) )
+    Ethhnndag=np.sum(Gqlm * ( 2 * rho * ( 2 * Y22m * rhobar + sqrtof6 * Y02m * ( \
+    rhobar + rho ) ) * taubar + sqrtof2 * Y12m * ( PsiCDe2bar * rho + ( \
+    rhobar * ( 3 * PsiCDe2 + ( -2 * mu * rhobar + ( 2 * mu * rho -3 * ( \
+    rho*rho ) ) ) ) -2 * ( 2 * rhobar + rho ) * ( taubar*taubar ) ) ) )
     )
+
     Ethphnndag=np.sum(sqrtof2 * Gqlm * rho * ( 3 * Yn12m * ( rho*rho ) + 2 * \
     taubar * ( - sqrtof3 * Y02m * rho + Y12m * taubar ) )
     )
@@ -424,26 +433,177 @@ def dGamma(M,a,radius,theta,phi_star,z_array):
     ) -2 * ( -2 * ( rhobar*rhobar ) + ( 3 * rhobar * rho + ( rho*rho ) ) \
     ) * ( taubar*taubar ) ) ) ) ) 
     )
+    
     Ethphnm= -1/( rhobar ) * np.sum( sqrtof6 * Y02m * rhobar * ( rho*rho ) \
     * ( ThornGqlm + Gqlm * ( rhobar + rho ) ) + ( sqrtof2 * Y12m * rho \
     * ( - rhobar + 2 * rho ) * ( ThornGqlm + Gqlm * ( rhobar + rho ) ) \
     * taubar + ThornGqlm * Y22m * taubar * ( 2 * pi * rho + ( rhobar * \
     taubar - rho * taubar ) ) ) 
     )
-
+    
     Thornhmm=- np.sum(Y22m * ( ThornThornThornGqlm + 2 * rhobar * ( \
     ThornThornGqlm + ThornGqlm * rhobar ) )
     )
     
-    Ethhmm=np.sum(2 * Y22m * rhobar * ( ThornThornGqlm + ThornGqlm * rhobar ) \
-    * ( 1/( rho ) ) * taubar
+    Ethhmm=np.sum(2 * Y22m * rhobar * ( ThornThornGqlm + ThornGqlm * rhobar ) * taubar / rho 
     )
-    Ethphmm=np.sum( sqrtof2 * Y12m * ( ThornThornGqlm + 2 * ThornGqlm * \
-    rhobar ) * rho + 2 * Y22m * ( 1/( rhobar ) ) * ( ThornThornGqlm * \
-    rho + ThornGqlm * rhobar * ( - rhobar + 2 * rho ) ) * taubar 
-    )
+    
+    # Ethphmm=( sqrtof2 * Y12m * ( ThornThornGqlm + 2 * ThornGqlm * \
+    # rhobar ) * rho + 2 * Y22m * ( 1/( rhobar ) ) * ( ThornThornGqlm * \
+    # rho + ThornGqlm * rhobar * ( - rhobar + 2 * rho ) ) * taubar 
+    # )
+    Ethphmm=np.sum( sqrtof2 * Y12m * ( ThornThornGqlm + 2 * ThornGqlm * rhobar \
+    ) * rho + 2 * Y22m * ( ThornThornGqlm * pi + ThornGqlm * ( - rhobar + \
+    2 * rho ) * taubar ) )
 
     for m in [-2,-1,0,1,2]:
+        ### Attempt in BL
+        # Thornhnndag+=- sqrtof2 * rho * ( ThornGqlm * ( sqrtof3 * Y02m[m+2]* rho \
+        #     -2 * Y12m[m+2]* taubar ) + Gqlm * ( sqrtof3 * Y02m[m+2]* rho * ( complex( 0,1 \
+        #     ) * ( 1/( Delta ) ) * a * m + 2 * rho ) -2 * Y12m[m+2]* ( complex( 0,1 ) \
+        #     * ( 1/( Delta ) ) * a * m + ( rhobar + 2 * rho ) ) * taubar ) )
+        # Thornphnndag+=( sqrtof2 * ThornGqlm * mu * ( sqrtof3 * Y02m[m+2]* rho -2 * \
+        #     Y12m[m+2]* taubar ) + Gqlm * ( sqrtof6 * Y02m[m+2]* ( 1/( rhobar ) ) * rho * \
+        #     ( PsiCDe2 * rhobar + ( PsiCDe2bar * rho + rhobar * ( 4 * mu * rhobar \
+        #     + ( -2 * ( 4 * gammabar + mu ) * rho + ( complex( 0,-0.5 ) * a * m * \
+        #     rhobar * ( rho*rho ) -2 * taubar * ( pi + taubar ) ) ) ) ) ) + \
+        #     sqrtof2 * Y12m[m+2]* ( 1/( rho ) ) * ( PsiCDe2 * ( pibar * rhobar - rho * \
+        #     taubar ) + 2 * rho * taubar * ( -4 * mu * rhobar + ( rho * ( 6 * \
+        #     gammabar + ( mu + complex( 0,0.5 ) * a * m * rhobar * rho ) ) + \
+        #     taubar * ( pi + taubar ) ) ) ) ) )
+        # Ethhnndag+=Gqlm * ( 2 * rho * ( 2 * Y22m[m+2]* rhobar + sqrtof6 * Y02m[m+2]* ( \
+        #     rhobar + rho ) ) * taubar + sqrtof2 * Y12m[m+2]* ( 3 * PsiCDe2 * rhobar + \
+        #     ( -2 * mu * ( rhobar*rhobar ) + ( PsiCDe2bar * rho + ( 2 * mu * \
+        #     rhobar * rho + ( -3 * rhobar * ( rho*rho ) + ( -4 * rhobar * ( \
+        #     taubar*taubar ) -2 * rho * ( taubar*taubar ) ) ) ) ) ) ) )
+        # Ethphnndag+=sqrtof2 * Gqlm * rho * ( 3 * ( Yn12m[m+2] ) * ( rho*rho ) + \
+        #     2 * taubar * ( - sqrtof3 * Y02m[m+2]* rho + Y12m[m+2]* taubar ) )
+        # Thornhnm+=( 1/( Delta*Delta ) ) * ( Gqlm * ( sqrtof2 * Y12m[m+2]* rho * ( \
+        #     complex( 0,-1 ) * Deltap * a * m + ( - ( a*a ) * ( m*m ) + ( complex( \
+        #     0,1 ) * Delta * a * m * ( rhobar + 2 * rho ) + ( Delta*Delta ) * ( ( \
+        #     rhobar*rhobar ) + ( rhobar * rho + 2 * ( rho*rho ) ) ) ) ) ) + \
+        #     complex( 0,-1 ) * Y22m[m+2]* a * m * ( -2 * Delta * pi * rho + ( Deltap * \
+        #     ( pi - taubar ) + ( complex( 0,-1 ) * a * m * ( pi - taubar ) + Delta \
+        #     * ( rhobar + rho ) * taubar ) ) ) ) + Delta * ( sqrtof2 * Y12m[m+2]* rho \
+        #     * ( Delta * ThornThornGqlm + ThornGqlm * ( complex( 0,2 ) * a * m + \
+        #     Delta * ( rhobar + 2 * rho ) ) ) + Y22m[m+2]* ( Delta * ThornThornGqlm * \
+        #     ( pi - taubar ) + ThornGqlm * ( 2 * Delta * pi * rho + ( complex( 0,2 \
+        #     ) * a * m * ( pi - taubar ) - Delta * ( rhobar + rho ) * taubar ) ) ) \
+        #     ) )
+        # Thornphnm+=0.5 * ( -2 * ( 1/( Delta ) ) * ThornGqlm * ( - mubar + mu ) \
+        #     * ( 1/( ( - rhobar + rho ) ) ) * ( sqrtof2 * Y12m[m+2]* rho * ( complex( \
+        #     0,1 ) * a * m + Delta * ( rhobar + rho ) ) + complex( 0,1 ) * Y22m[m+2]* \
+        #     a * m * ( pi - taubar ) ) + ( - ( 1/( Delta ) ) * Gqlm * ( 1/( rhobar \
+        #     ) ) * ( complex( 0,-0.5 ) * Y22m[m+2]* a * m * rhobar * ( 4 * ( \
+        #     betabar*betabar ) * ( 2 * gammabar + ( - mubar + mu ) ) + ( -6 * \
+        #     mubar * pi + ( -4 * mu * pi + ( -4 * betabar * ( 2 * gammabar + ( - \
+        #     mubar + mu ) ) * pi + ( -2 * mubar * ( pi*pi ) + ( 2 * mu * ( pi*pi ) \
+        #     + ( 4 * gammabar * pi * ( 2 + pi ) + ( complex( 0,1 ) * a * m * pi * \
+        #     rhobar * rho + ( 4 * mubar * taubar + 2 * mu * taubar ) ) ) ) ) ) ) ) \
+        #     ) + ( sqrtof2 * Y12m[m+2]* ( 2 * Delta * PsiCDe2 * rhobar * rho + ( \
+        #     complex( 0,2 ) * a * m * ( mubar + mu ) * rhobar * rho + ( 2 * Delta \
+        #     * PsiCDe2bar * rho * ( rhobar + rho ) + ( -12 * Delta * gammabar * \
+        #     rhobar * rho * ( rhobar + rho ) + ( complex( 0,-1 ) * Delta * a * m * \
+        #     ( rhobar*rhobar ) * ( rho*rho ) * ( rhobar + rho ) + ( 2 * Delta * ( \
+        #     rhobar*rhobar ) * ( PsiCDe2 + mu * ( 3 * rhobar + rho ) ) -4 * Delta \
+        #     * ( ( rhobar + rho )*( rhobar + rho ) ) * ( taubar*taubar ) ) ) ) ) ) \
+        #     ) + a * m * ( Y22m[m+2]* ( 0.5 * a * m * rhobar * rho * ( -2 * rhobar + \
+        #     rho ) + complex( 0,1 ) * ( -4 * mubar * rhobar + ( -4 * gammabar * ( \
+        #     -2 * rhobar + rho ) + mu * ( rhobar + rho ) ) ) ) * taubar + complex( \
+        #     0,1 ) * sqrtof2 * Y12m[m+2]* ( PsiCDe2bar * rho + ( complex( 0,-1 ) * a * \
+        #     m * ( rhobar*rhobar ) * ( rho*rho ) + ( rhobar * ( PsiCDe2 + ( 4 * mu \
+        #     * rhobar -2 * ( 6 * gammabar + mu ) * rho ) ) -2 * ( rhobar + rho ) * \
+        #     ( taubar*taubar ) ) ) ) ) ) ) + ( - ( 1/( rhobar ) ) * ( 1/( rho ) ) \
+        #     * ( sqrtof2 * Y12m[m+2]* rho + Y22m[m+2]* ( pi - taubar ) ) * ( 2 * \
+        #     ThornThornGqlm * mu * rhobar + ThornGqlm * ( PsiCDe2 * rhobar + ( \
+        #     PsiCDe2bar * rho + 2 * ( rhobar + rho ) * taubar * tau ) ) ) + \
+        #     ThornGqlm * ( 2 * Y22m[m+2]* ( ( 4 * gammabar + complex( 0,0.5 ) * a * m \
+        #     * rhobar * rho ) * ( pi - taubar ) + ( 2 * mubar * taubar - mu * ( pi \
+        #     + taubar ) ) ) - sqrtof2 * Y12m[m+2]* ( 1/( rhobar ) ) * ( PsiCDe2 * \
+        #     rhobar + ( PsiCDe2bar * rho + 2 * rhobar * ( rho * ( -4 * gammabar + \
+        #     ( -2 * gamma + ( mu + complex( 0,-0.5 ) * a * m * rhobar * rho ) ) ) \
+        #     + ( pi + taubar ) * tau ) ) ) ) ) ) )
+        # Ethhnm+=1/4 * ( 1/( Delta ) ) * ( 1/( rhobar ) ) * ( 1/( rho ) ) * ( \
+        #     -2 * Delta * ThornGqlm * pibar * rhobar * rho * ( 2 * sqrtof2 * Y12m[m+2]\
+        #     * rho + 2 * Y22m[m+2]* ( pi - taubar ) ) + ( Gqlm * ( 8 * Delta * Y22m[m+2]* \
+        #     ( rhobar*rhobar ) * ( rho*rho ) * ( rhobar + rho ) + ( complex( 0,1 ) \
+        #     * Y22m[m+2]* a * m * ( rho * ( PsiCDe2bar * rho + rhobar * ( 3 * PsiCDe2 \
+        #     + ( 4 * ( betabar*betabar ) * pibar + ( -2 * mu * rhobar + ( 2 * mu * \
+        #     rho + 2 * pi * ( 2 * beta + ( pibar * ( -2 + ( -2 * betabar + pi ) ) \
+        #     - taubar ) ) ) ) ) ) ) + ( -2 * pibar * rhobar * rho * ( pi -2 * \
+        #     taubar ) -8 * pi * ( rhobar*rhobar ) * taubar ) ) + ( -4 * sqrtof2 * \
+        #     Y12m[m+2]* rhobar * rho * ( complex( 0,1 ) * a * m * pibar * rho + Delta \
+        #     * ( rhobar + rho ) * ( rhobar + 2 * rho ) * taubar ) + complex( 0,1 ) \
+        #     * a * m * ( 4 * rhobar * rho * ( 2 * Y22m[m+2]* rhobar * rho - sqrtof2 * \
+        #     Y12m[m+2]* ( 3 * rhobar + rho ) * taubar ) + Y22m[m+2]* ( 2 * mu * rhobar * ( \
+        #     -2 * rhobar + rho ) * ( - rhobar + rho ) + ( PsiCDe2bar * rho * ( 6 * \
+        #     rhobar + rho ) + ( PsiCDe2 * rhobar * ( 2 * rhobar + 3 * rho ) -2 * ( \
+        #     -6 * ( rhobar*rhobar ) + ( 4 * rhobar * rho + ( rho*rho ) ) ) * ( \
+        #     taubar*taubar ) ) ) ) ) ) ) ) + 2 * Delta * ThornGqlm * ( Y22m[m+2]* ( \
+        #     PsiCDe2bar * rho * ( 3 * rhobar + rho ) + rhobar * ( 2 * mu * ( ( - \
+        #     rhobar + rho )*( - rhobar + rho ) ) + ( PsiCDe2 * ( rhobar + 3 * rho \
+        #     ) -2 * taubar * ( pi * rho + ( -3 * rhobar * taubar + 4 * rho * \
+        #     taubar ) ) ) ) ) + 2 * rhobar * rho * ( 2 * Y22m[m+2]* rhobar * rho + \
+        #     sqrtof2 * Y12m[m+2]* ( 3 * rhobar + rho ) * tau ) ) ) )
+        # Ethphnm+=-0.5 * ( 1/( Delta ) ) * ( 1/( rhobar ) ) * ( 2 * Delta * \
+        #     ThornGqlm * ( sqrtof6 * Y02m[m+2]* rhobar * ( rho*rho ) + ( sqrtof2 * \
+        #     Y12m[m+2]* rho * ( - rhobar + 2 * rho ) * taubar + Y22m[m+2]* taubar * ( 2 * \
+        #     pi * rho + ( rhobar - rho ) * taubar ) ) ) + Gqlm * ( complex( 0,-1 ) \
+        #     * Y22m[m+2]* a * m * ( 2 * ( betabar*betabar ) * pi * rhobar + ( - ( \
+        #     pi*pi ) * rhobar + ( ( pi*pi*pi ) * rhobar + ( -2 * betabar * pi * ( \
+        #     1 + pi ) * rhobar + ( 2 * pi * ( rhobar - rho ) * taubar -2 * rhobar \
+        #     * ( taubar*taubar ) ) ) ) ) ) + sqrtof2 * rho * ( 2 * sqrtof3 * Y02m[m+2]\
+        #     * rhobar * rho * ( complex( 0,1 ) * a * m + Delta * ( rhobar + rho ) \
+        #     ) + Y12m[m+2]* ( 2 * Delta * ( - ( rhobar*rhobar ) + ( rhobar * rho + 2 * \
+        #     ( rho*rho ) ) ) * taubar + complex( 0,1 ) * a * m * ( 3 * pi * rhobar \
+        #     + ( -2 * rhobar * taubar + rho * taubar ) ) ) ) ) )
+        # Thornhmm+=- ( 1/( Delta*Delta*Delta ) ) * Y22m[m+2]* ( complex( 0,-1 ) * \
+        #     Gqlm * a * m * ( -2 * ( Deltap*Deltap ) + ( complex( 0,3 ) * Deltap * \
+        #     a * m + ( ( a*a ) * ( m*m ) + ( -2 * ( Delta*Delta ) * ( \
+        #     rhobar*rhobar ) + 2 * Delta * ( 1 + ( Deltap * rhobar + complex( 0,-1 \
+        #     ) * a * m * rhobar ) ) ) ) ) ) + Delta * ( ThornGqlm * ( complex( \
+        #     0,-3 ) * Deltap * a * m + ( -3 * ( a*a ) * ( m*m ) + ( complex( 0,4 ) \
+        #     * Delta * a * m * rhobar + 2 * ( Delta*Delta ) * ( rhobar*rhobar ) ) \
+        #     ) ) + Delta * ( Delta * ThornThornThornGqlm + ThornThornGqlm * ( \
+        #     complex( 0,3 ) * a * m + 2 * Delta * rhobar ) ) ) )
+        # Thornphmm+=Y22m[m+2]* ( ThornThornThornGqlm * ( - mubar + mu ) * ( 1/( ( - \
+        #     rhobar + rho ) ) ) + ( complex( 0,1 ) * ( 1/( Delta*Delta ) ) * \
+        #     ThornGqlm * a * m * ( - mubar + mu ) * ( - Deltap + ( complex( 0,1 ) \
+        #     * a * m + 2 * Delta * rhobar ) ) * ( 1/( ( - rhobar + rho ) ) ) + ( \
+        #     0.5 * ( 1/( Delta*Delta ) ) * ( Gqlm * a * m * ( complex( 0,1 ) * \
+        #     Deltap + ( a * m + complex( 0,-2 ) * Delta * rhobar ) ) - Delta * ( \
+        #     Delta * ThornThornGqlm + 2 * ThornGqlm * ( complex( 0,1 ) * a * m + \
+        #     Delta * rhobar ) ) ) * ( 8 * gammabar + complex( 0,1 ) * a * m * \
+        #     rhobar * rho ) + ( ( 1/( rho ) ) * ( 2 * ThornThornGqlm * mu * rhobar \
+        #     + 2 * ThornGqlm * ( rhobar * ( PsiCDe2 + mu * rhobar ) + ( PsiCDe2bar \
+        #     * rho -2 * ( rhobar + rho ) * ( taubar*taubar ) ) ) ) + ( \
+        #     ThornThornGqlm * ( 1/( rhobar ) ) * ( 1/( rho ) ) * ( PsiCDe2bar * \
+        #     rho + rhobar * ( PsiCDe2 + 2 * ( pi + taubar ) * tau ) ) + ( complex( \
+        #     0,-1 ) * ( 1/( Delta*Delta ) ) * Gqlm * a * m * ( 1/( rho ) ) * ( 2 * \
+        #     ( Deltap + complex( 0,-1 ) * a * m ) * ( mubar + mu ) * rho - Delta * \
+        #     ( PsiCDe2 * rhobar + ( PsiCDe2bar * rho + rho * ( 4 * mubar * rhobar \
+        #     + ( 2 * mu * rhobar + ( - rhobar * rho + ( 2 * pibar * taubar + 2 * \
+        #     taubar * tau ) ) ) ) ) ) ) + complex( 0,1 ) * ( 1/( Delta ) ) * a * m \
+        #     * ( 1/( rhobar ) ) * ( 1/( rho ) ) * ( 2 * ThornThornGqlm * mu * \
+        #     rhobar + ThornGqlm * ( PsiCDe2 * rhobar + ( PsiCDe2bar * rho + 2 * ( \
+        #     mubar * rhobar * rho + ( mu * rhobar * rho + ( rhobar + rho ) * \
+        #     taubar * tau ) ) ) ) ) ) ) ) ) ) )
+        # Ethhmm+=2 * ( 1/( Delta*Delta ) ) * Y22m[m+2]* ( 1/( rho ) ) * ( - Gqlm * \
+        #     a * m * ( complex( 0,1 ) * Deltap + ( a * m + complex( 0,-1 ) * Delta \
+        #     * rhobar ) ) * ( pibar * rho + 2 * rhobar * taubar ) + Delta * ( \
+        #     Delta * ThornThornGqlm * rhobar * taubar + ThornGqlm * ( Delta * ( \
+        #     rhobar*rhobar ) * taubar + complex( 0,1 ) * a * m * ( pibar * rho + 3 \
+        #     * rhobar * taubar ) ) ) )
+        # Ethphmm+=( 1/( Delta*Delta ) ) * ( complex( 0,-1 ) * Gqlm * a * m * ( \
+        #     sqrtof2 * Y12m[m+2]* ( Deltap + ( complex( 0,-1 ) * a * m -2 * Delta * \
+        #     rhobar ) ) * rho + 2 * Y22m[m+2]* ( Deltap * pi + ( complex( 0,-1 ) * a * \
+        #     m * pi + ( - Delta * pi * rhobar + ( Delta * rhobar * taubar - Delta \
+        #     * rho * taubar ) ) ) ) ) + Delta * ( sqrtof2 * Y12m[m+2]* ( Delta * \
+        #     ThornThornGqlm + 2 * ThornGqlm * ( complex( 0,1 ) * a * m + Delta * \
+        #     rhobar ) ) * rho + 2 * Y22m[m+2]* ( Delta * ThornThornGqlm * pi + \
+        #     ThornGqlm * ( complex( 0,2 ) * a * m * pi + ( - Delta * rhobar * \
+        #     taubar + 2 * Delta * rho * taubar ) ) ) ) )
+
         Thornphnndag+=( complex( 0,-1 ) * Gqlm * a * m * rhobar * ( rho*rho ) \
     * ( sqrtof6 * Y02m[m+2] * rho -2 * sqrtof2 * Y12m[m+2] * taubar ) + ( sqrtof2 * \
     Y12m[m+2] * ( 1/( rho ) ) * ( -2 * ThornGqlm * mu * rho * taubar + Gqlm \
@@ -453,6 +613,7 @@ def dGamma(M,a,radius,theta,phi_star,z_array):
     Gqlm * ( PsiCDe2 + ( 2 * ( -2 * ( gammabar + gamma ) + mu ) * rho + \
     ( PsiCDe2bar * ( 1/( rhobar ) ) * rho + 2 * ( pi + taubar ) * tau ) ) \
     ) ) ) )
+        
         dummythornphnm=( ThornGqlm * ( 4  * gammabar + complex( 0,1 ) * \
     a * m * rhobar * rho ) * ( pi - taubar ) * Y22m[m+2] + ( sqrtof2 * ( \
     complex( 0,1 ) * Y12m[m+2] * a * m * rhobar * ( rho*rho ) * ( ThornGqlm + \
@@ -469,7 +630,8 @@ def dGamma(M,a,radius,theta,phi_star,z_array):
     ) + ( pi - taubar ) * ( ThornThornGqlm * ( mubar - mu ) * ( 1/( ( - \
     rhobar + rho ) ) ) -0.5 * ThornGqlm * ( 1/( rhobar ) ) * ( 1/( rho ) \
     ) * ( PsiCDe2 * rhobar + ( PsiCDe2bar * rho + 2 * ( rhobar + rho ) * \
-    taubar * tau ) ) ) ) ) ) # m=+/-2 has a canellation problem near the equatorial plane due to round-off error
+    taubar * tau ) ) ) ) ) ) # m= +/- 2 or 1 has a canellation problem near the equatorial plane due to round-off error
+        
         if m==2 or m==-2:
             middummy=np.real(dummythornphnm)*np.cos(theta)
             if theta<=np.pi/2+.01 and theta>=np.pi/2-.01:
@@ -481,6 +643,7 @@ def dGamma(M,a,radius,theta,phi_star,z_array):
                 Thornphnm+= np.real(dummythornphnm)
             else: Thornphnm+= middummy*1j/np.cos(theta) + np.real(dummythornphnm)
         else: Thornphnm+= dummythornphnm
+
     Thornphmm+=( complex( 0,-1 ) * Y22m[m+2] * a * m * rhobar * ( \
     ThornThornGqlm + 2 * ThornGqlm * rhobar ) * rho + Y22m[m+2] * ( 1/( \
     rhobar ) ) * ( 1/( rho ) ) * ( ThornThornThornGqlm * mu * rhobar + ( \

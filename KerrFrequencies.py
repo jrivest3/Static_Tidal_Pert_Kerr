@@ -1,6 +1,7 @@
 #KerrFrequencies.py
 
 # import math
+from matplotlib.dates import FR
 from KerrB import *
 from mpmath import ellipk,ellipe,ellippi
 
@@ -62,5 +63,54 @@ def Frequencies(a, p, e, x, En=0, Lz=0, Q=0, r1=0, r2=0, r3=0, r4=0, zm=0, zp=0,
     CapitalOmegaCurlyPhi = CapitalUpsilonCurlyPhi / CapitalGamma
 
     return [CapitalOmegar, CapitalOmegaTheta, CapitalOmegaCurlyPhi]
+
+def rootFindParametersFromFrequencies(Omega_xi, Omega_eta, Omega_phi, init_apex):
+
+    def f(apex):
+        omega_xi, omega_eta, omega_phi = Frequencies(*apex)
+        return (omega_xi - Omega_xi)**2 + (omega_eta - Omega_eta)**2 + (omega_phi - Omega_phi)**2
+
+    return opt.minimize(f, np.array([init_apex]),
+		bounds = [(0,.999), (1.6, float('inf')),(0, .999), (-1, 1)], # issues for x=0? or Separatrix?
+		tol=1e-16)
+
+# def findResSurface(spin, ecc, inc):
+#     def ratioFunc(ptest, numIndex, denIndex):
+#         Os = Frequencies(spin, ptest, ecc, inc)
+#         if numIndex >= denIndex:
+#             raise ValueError('Options [0,1,2] for ratios are [r,theta,phi]. Must be in order. No repeats.')
+#         if np.isnan(Os[numIndex] / Os[denIndex]):
+#             print(f'With ptest= {ptest}, ratioFunc is NaN for Numerator taking Frequenies index {numIndex} and Omega= {Os[numIndex]} and the Denom taking index {denIndex} and value Omega= {Os[denIndex]}')
+#             return -1
+#         return np.abs(Os[numIndex] / Os[denIndex])
+
+#     Oindex1, Oindex2 = None, None
+#     Opt = that.Controls.SelectedRatio
+#     targ = that.Controls.TargetRes
+
+#     if Opt in ['r/theta', 'r/t']:
+#         Oindex1, Oindex2 = 0, 1
+#     elif Opt in ['r/p', 'r/phi']:
+#         if inc == 0:
+#             return -1
+#         Oindex1, Oindex2 = 0, 2
+#     elif Opt in ['t/p', 'theta/phi']:
+#         if inc == 0:
+#             return -1
+#         Oindex1, Oindex2 = 1, 2
+#     else:
+#         print("Invalid ratio option. Set to default 'r/theta'.")
+#         Oindex1, Oindex2 = 0, 1
+
+#     pmin = findSeparatrix(spin, ecc, inc) + 0.0001
+#     ratatSep = ratioFunc(pmin, Oindex1, Oindex2)
+
+#     if targ < ratatSep:
+#         return 0
+
+#     def f(ptest):
+#         return ratioFunc(ptest, Oindex1, Oindex2) - targ
+
+#     return my_newton(f, pmin, fprime=None, args=(), tol=1.48e-08, maxiter=50, fprime2=None)
 
 
