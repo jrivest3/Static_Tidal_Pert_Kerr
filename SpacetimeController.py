@@ -184,12 +184,12 @@ class PointMass(Perturber):
         assert self.z_array is not None
         
 class AccretionRing(Perturber):
-    def __init__(self,inclination,Long_of_Asc_Node,Epsilon=None,Mass=None,Distance=None, zs=None, Eij=None,name='Accretion Ring',Model='Accretion Ring') -> None:
+    def __init__(self,inclination,Long_of_Asc_Node,Epsilon=None,Mass=None,Radius=None, zs=None, Eij=None,name='Accretion Ring',Model='Accretion Ring') -> None:
         super().__init__(zs, Eij,name,Model)
         # self.Model=
         # self.name=
         self.mass=Mass
-        self.distance=Distance
+        self.radius=Radius
         self.epsilon= Epsilon
 
         if inclination<0 or inclination>np.pi/2:raise ValueError("inclination must be in the range [0,pi/2).")
@@ -228,13 +228,13 @@ class AccretionRing(Perturber):
                 #             -3/2 * ( zm*zm ) * ( np.cos( 2 * psi ) + complex( 0,-1 ) * np.sin( 2 * psi ) )
                 # self.z_ring= np.array([np.conj(z2),np.conj(z1),z0,z1,z2])
                 if Epsilon is None:
-                    if Mass is None or Distance is None:
+                    if Mass is None or Radius is None:
                         raise ValueError("Need to give value for either Epsilon or both Mass and Distance.")
                         #Error
                     # try: 
                     else:
                         # put the Norm back in when specific mass and distance are given
-                        self.epsilon=Norm*Mass/(Distance*Distance*Distance) # central mass M=1, M^2*Mp/Rp^3
+                        self.epsilon=Norm*Mass/(Radius*Radius*Radius) # central mass M=1, M^2*Mp/Rp^3
                     # except ValueError:
                 # try:
                 assert isinstance(self.epsilon,float)       

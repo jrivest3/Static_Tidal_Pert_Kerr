@@ -177,7 +177,7 @@ class Geodesic_Set:
 
     # def __repr__(self) -> str:
     #     pass
-    def __str__(self) -> str:
+    def __str__(self) -> str: # should also give some information about the Trajectories
         return self.name #+'(xi_0,chi_o,phi_0)='+str(self.init_phase)
 
     # def UpdateTrajOneStep(self,t:float,Pos_array:np.ndarray,Vel_array:np.ndarray,Acc_array:np.ndarray,Jerk_array:np.ndarray)->None:
