@@ -58,10 +58,11 @@ class Perturber:
         else: print(f"These z's are already {self.z_array}")
 
     def __add__(self,a):
+        if a.z_array is None: a.make_zs_from_Eij()
         new_zs=self.z_array+a.z_array if self.z_array is not None else a.z_array
         new_Eij=self.Eij+a.Eij if self.Eij is not None and a.Eij is not None else None
         assert new_zs is not None
-        return Perturber(zs=new_zs,Eij=new_Eij,name='Net Perturbation',Model='Net Perturbation')#
+        return Perturber(zs=new_zs,Eij=new_Eij,name='Net Perturbation',Model='Net Perturbation')#,Epsilon= figure out later. band-aid made in Add_Pert function below
 
     # def _outer_decorator(y):
     #     def _decorator(foo):
@@ -105,7 +106,7 @@ class Perturber:
 
     def add_and_normalize_zs(self,z2_array=None,epsilon=1)->None:
         '''
-        Used to aid in fixing the the strength of the perturbation. 
+        Used to aid in fixing the strength of the perturbation. 
         If no second array is given, z_array is normalized. 
         The value of espilon becomes the new magnitude of the array.
         The option epsilon='eps' can be given to set the magnitude to the value of the Perturber's Epsilon attribute, if it has one.
@@ -260,7 +261,7 @@ class Spacetime:
 
     # tau_array=
 
-    def __init__(self,a,M=1,tau_array=np.array([])) -> None:
+    def __init__(self,a,M=1,Nsteps=10) -> None:
         self.M=M
         self.a=a
         # self.NetPerturbation=Perturber(Model='Flat Background',name='Flat Background')
@@ -273,7 +274,8 @@ class Spacetime:
         # self.num_of_Geods_run={'unperturbed':{'sets':0,'total':0},'perturbed':{'sets':0,'total':0}}
         # self.progress='No Geodesics Initialized'
 
-        self.tau_array=tau_array # Each Trajectory may have unique times if they are not stable
+        #self.tau_array=tau_array # Each Trajectory may have unique times if they are not stable
+        self.max_integration_steps=Nsteps
 
         # # A Cache to store acceleration values from the integrator.
         # self.RHS_Cache=self.RHS_Cache_Constructor() # one cache per ST, should be cleared regularly to use less memory
@@ -329,6 +331,7 @@ class Spacetime:
             if checkname=='Flat Background': 
                 self.NetPerturbation.set_name(NewSource.name)
                 self.NetPerturbation.Model=NewSource.Model
+                self.NetPerturbation.Epsilon=NewSource.Epsilon ## the band-aide to __add__
             else: self.NetPerturbation.set_name('NetPerturbation')
             #self.Perturbers['NetPerturbation'] deletion is not necessary in Python, only overwriting the reference
             self.Perturbers['NetPerturbation']=self.NetPerturbation
@@ -465,7 +468,7 @@ class Spacetime:
                 t_arr=geodesic.tau_array
                 assert geodesic.tau_array.size>0
             except:
-                if self.tau_array.size>0:t_arr= self.tau_array 
+                if self.max_integration_steps>0:t_arr= np.linspace(0,self.max_integration_steps,self.max_integration_steps)
                 else: argparse.ArgumentError(None,message='A time array is needed for the Integrator.')
         
         cache,y0=self.IntRHS(),geodesic.ICs#.flatten() #already done in Integrator RHS_Cache

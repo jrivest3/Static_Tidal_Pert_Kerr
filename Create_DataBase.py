@@ -111,7 +111,7 @@ def tuple_to_filename_string(input_tuple)->str:
  
     return filename_str
 
-def SpacetimeConstructor(a,ptype,eps,theta,phi,p,e,x,this_PertST,PertG):# *args,**kwargs):
+def SpacetimeConstructor(a,ptype,eps,theta,phi,p,e,x,this_PertST=None,PertG={}):# *args,**kwargs):
     # if tuple([a,ptype,eps,theta,phi]) not in this_PertST:
     this_PertST=Spacetime(a)
     this_PertST.Add_Perturbation_Source(ptype,theta,phi,Epsilon=float(eps))
@@ -119,6 +119,18 @@ def SpacetimeConstructor(a,ptype,eps,theta,phi,p,e,x,this_PertST,PertG):# *args,
         PertG[(a,p,e,x)]={}
         PertG[(a,p,e,x)]=this_PertST.GeodesicConstructor(p,e,x)
     return this_PertST,PertG
+
+def create_attrs(h5_entity,class_obj)->None:
+    for attr, value in class_obj.__dict__.items(): # __dict__ or vars(), not dir() # import collections for dictionary unpacking?
+        if value is None:value='None'
+        if isinstance(value,(Perturber,Geodesic_Set)):
+            for inner_attr, inner_value in class_obj[attr].__dict__.items():
+                if inner_value is None:inner_value='None'
+                print(f"{attr}: Inner Attribute: {inner_attr}, Value: {inner_value}")
+                h5_entity.attrs.create(f'{attr}.{inner_attr}',inner_value)
+        else:
+            print(f"Attribute: {attr}, Value: {value}")
+            h5_entity.attrs.create(f'{attr}',value)
 
 def write_db_groups(ST_f,this_PertST,PertG,GsetsList:List,err_message=True):
     if not this_PertST: raise ValueError(f'Spacetime {this_PertST=} not created yet')
@@ -128,18 +140,10 @@ def write_db_groups(ST_f,this_PertST,PertG,GsetsList:List,err_message=True):
             set_index=0
             db_time=time.perf_counter()
             for key in PertG:
-                a,p,e,x=key
+                a,p,e,x=key #could use tuple_to_filename_string
                 GsetsList.append(ST_f.create_group(f'Set_{a}_{p}_{e}_{x}',track_order=True))
-                for attr, value in this_PertST.__dict__.items(): # __dict__ or vars(), not dir() # import collections for dictionary unpacking?
-                    if value is None:value='None'
-                    if isinstance(value,(Perturber,Geodesic_Set)):
-                        for inner_attr, inner_value in this_PertST[attr].__dict__.items():
-                            if inner_value is None:inner_value='None'
-                            print(f"{attr}: Inner Attribute: {inner_attr}, Value: {inner_value}")
-                            GsetsList[set_index].attrs.create(f'{attr}.{inner_attr}',inner_value)
-                    else:
-                        print(f"Attribute: {attr}, Value: {value}")
-                        GsetsList[set_index].attrs.create(f'{attr}',value)
+                #GsetsList[set_index].attrs.create(f'Constants of Motion',PertG[key].CoMs) ## limit to needed info
+                create_attrs(GsetsList[set_index],PertG[key])
                 set_index+=1
             print('group creation time:',time.perf_counter()-db_time)
             return GsetsList
@@ -147,7 +151,7 @@ def write_db_groups(ST_f,this_PertST,PertG,GsetsList:List,err_message=True):
     print('write_db_groups Failed: ST_f is closed.')
 
 
-def fill_database(ST_f,t_len,this_PertST,PertG,GsetsList,PertTraj,PertStrain):#,group_names:List[str]
+def fill_database(ST_f,t_len,this_PertST=None,PertG={},GsetsList=[],PertTraj={},PertStrain={}):#,group_names:List[str]
     if not this_PertST: raise ValueError(f'Spacetime {this_PertST=} not created yet')
     if not ST_f: raise FileNotFoundError(f'{ST_f=} File is not open.')
     # try:
@@ -157,23 +161,25 @@ def fill_database(ST_f,t_len,this_PertST,PertG,GsetsList,PertTraj,PertStrain):#,
     set_index=0
     integ_time=time.perf_counter()
     for key in PertG:
-        # a,p,e,x=key
         tau_array=np.linspace(0,t_len,t_len)
         Gsets[set_index].create_dataset('tau_array',data=tau_array)
         for psi_0_key in PertG[key].Trajectories: # groups and datasets
+            #xi0,chi0,phi0=psi_0_key #could use tuple_to_filename_string
+            psi0_str=tuple_to_filename_string(psi_0_key)
+            this_Traj=Gsets[set_index].create_group(psi0_str,track_order=True)
             Traj=this_PertST.run_Trajectory(PertG[key].Trajectories[psi_0_key],t_eval=tau_array)
-            PertTraj[psi_0_key]=Gsets[set_index].create_dataset('Traj_'+tuple_to_filename_string(psi_0_key),data=Traj)
+            PertTraj[psi_0_key]=this_Traj.create_dataset('Traj_'+psi0_str,data=Traj)
             Strain=this_PertST.calc_Strain(PertG[key].Trajectories[psi_0_key])
-            PertStrain[psi_0_key]=Gsets[set_index].create_dataset('Strain_'+tuple_to_filename_string(psi_0_key),data=Strain)
+            PertStrain[psi_0_key]=this_Traj.create_dataset('Strain_'+psi0_str,data=Strain)
         print('time for set',set_index,':',time.perf_counter()-integ_time)
         set_index+=1
-    print('to fill one h5:',time.perf_counter()-integ_time)
+    print('to fill one h5:',(time.perf_counter()-integ_time)/60,'min')
     return this_PertST,PertG,Gsets,PertTraj,PertStrain
     # except: print(f'fill_database Failed: {PertG=}')
 
 
 def main():#get_File_and_Group_names():
-    this_PertST=None;PertG={};GsetsList=[];PertTraj={};PertStrain={}
+    #this_PertST=None;PertG={};GsetsList=[];PertTraj={};PertStrain={}
     h5name, operands = parse(sys.argv[1:])
     [p,e,x]= [10.0,0,1] #These and the z's should be reported for reproducibility. Don't let x=0. [float(x) for x in args[1:4]] if len(args) else
 
@@ -214,10 +220,11 @@ def main():#get_File_and_Group_names():
             a,ptype,eps,theta,phi=paramList
             raise SystemExit(f'Tried:\n{[a,ptype,eps,theta,phi,p,e,x]=}, \n'+MY_USAGE)
         print('before constructor:',time.perf_counter()-start_time)
-        this_PertST,PertG=SpacetimeConstructor(a,ptype,eps,theta,phi,p,e,x,this_PertST,PertG)
+        this_PertST,PertG=SpacetimeConstructor(a,ptype,eps,theta,phi,p,e,x)#,this_PertST,PertG)
         print('before fill_database:',time.perf_counter()-start_time)
-        fill_database(ST_f,int(operands[1]),this_PertST,PertG,GsetsList,PertTraj,PertStrain)
-        print('Done:',time.perf_counter()-start_time)
+        create_attrs(ST_f,this_PertST)
+        fill_database(ST_f,int(operands[1]),this_PertST,PertG)#,GsetsList,PertTraj,PertStrain)
+        print('Done:',(time.perf_counter()-start_time)/60,'min')
         # try:
         #     Result:tuple=fill_database(ST_f,int(operands[1]),this_PertST,PertG,GsetsList,PertTraj,PertStrain)
         #     this_PertST,PertG,GsetsList,PertTraj,PertStrain=Result
