@@ -46,7 +46,7 @@ def Gamma(M,a,radius,theta): # Calculated by BHPToolkit
     # alpha= pi-betabar
     # alphabar= pibar-beta
 
-    #outgoing Kerr coords
+    #outgoing Kerr coords # shoud be identical in BL and IK
     ChrKN=np.zeros((4,4,4),np.complex128)
     ChrKN[0,0,0]=-1/8 * M * ( 1/( rho ) ) * ( 1/( rhobar ) ) * ( ( \
     rho*rho ) + ( rhobar*rhobar ) ) * ( 2 * rho * rhobar + ( ( \
